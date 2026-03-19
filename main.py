@@ -1,6 +1,5 @@
-def main():
-    print("Hello from code-atlas!")
+from parser import parse
 
 
 if __name__ == "__main__":
-    main()
+    parse()
