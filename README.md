@@ -275,3 +275,35 @@ flowchart LR
     B --> C[Incremental indexing cache]
     C --> D[More query intelligence]
 ```
+
+---
+
+## 13) MCP integration (for AI agents)
+
+Code Atlas includes an MCP server so AI agents can call graph tools directly.
+
+Start the MCP server (stdio transport):
+
+```bash
+code-atlas-mcp
+```
+
+Exposed MCP tools:
+
+- `index_repo(source, out?)`
+- `stats(graph?)`
+- `find_symbol(graph, query, limit?)`
+- `callers(graph, symbol, limit?)`
+- `path_between(graph, source, target, max_depth?)`
+- `impact_of_symbol(graph, symbol, depth?, limit?)`
+- `related_files(graph, file, depth?, limit?)`
+
+Tool responses follow a structured shape:
+
+```json
+{
+  "ok": true,
+  "data": {},
+  "meta": { "duration_ms": 12 }
+}
+```
