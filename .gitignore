@@ -1,10 +1,41 @@
-# Python-generated files
+# Bytecode and Python cache
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+
+# Build and packaging artifacts
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
 
 # Virtual environments
-.venv
+.venv/
+venv/
+env/
+
+# Test and type-checker caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+
+# Tooling and editor folders
+.python-version
+.idea/
+.vscode/
+
+# Local runtime files
+*.log
+
+# Generated graph output
+code-atlas.graph.json
+
+# Local JSON artifacts
+*.json

@@ -1,7 +1,10 @@
 [project]
 name = "code-atlas"
 version = "0.1.0"
-description = "Add your description here"
+description = "Polyglot repository to knowledge graph CLI for AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[project.scripts]
+code-atlas = "code_atlas.cli:run"

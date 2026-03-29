@@ -1,5 +1,5 @@
-from parser import parse
+from code_atlas.cli import run
 
 
 if __name__ == "__main__":
-    parse()
+    raise SystemExit(run())
