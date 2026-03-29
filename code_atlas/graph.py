@@ -11,6 +11,7 @@ class GraphStore:
     def __init__(self) -> None:
         self._nodes: dict[str, Node] = {}
         self._edges: list[Edge] = []
+        self._metadata: dict[str, object] = {}
 
     @property
     def nodes(self) -> dict[str, Node]:
@@ -20,6 +21,10 @@ class GraphStore:
     def edges(self) -> list[Edge]:
         return self._edges
 
+    @property
+    def metadata(self) -> dict[str, object]:
+        return self._metadata
+
     def add_node(self, node: Node) -> None:
         if node.id not in self._nodes:
             self._nodes[node.id] = node
@@ -27,10 +32,14 @@ class GraphStore:
     def add_edge(self, edge: Edge) -> None:
         self._edges.append(edge)
 
+    def set_metadata(self, key: str, value: object) -> None:
+        self._metadata[key] = value
+
     def stats(self) -> dict[str, object]:
         node_types: dict[str, int] = {}
         edge_types: dict[str, int] = {}
         languages: dict[str, int] = {}
+        confidence_counts: dict[str, int] = {}
 
         for node in self._nodes.values():
             node_types[node.type] = node_types.get(node.type, 0) + 1
@@ -38,18 +47,32 @@ class GraphStore:
 
         for edge in self._edges:
             edge_types[edge.type] = edge_types.get(edge.type, 0) + 1
+            confidence = edge.confidence or "unknown"
+            confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
 
-        return {
+        total_edges = len(self._edges)
+        confidence_percentages = {
+            key: round((value / total_edges) * 100, 2) if total_edges else 0.0
+            for key, value in confidence_counts.items()
+        }
+
+        stats: dict[str, object] = {
             "nodes": len(self._nodes),
             "edges": len(self._edges),
             "node_types": node_types,
             "edge_types": edge_types,
             "languages": languages,
+            "confidence_counts": confidence_counts,
+            "confidence_percentages": confidence_percentages,
         }
+        if "extraction_coverage" in self._metadata:
+            stats["extraction_coverage"] = self._metadata["extraction_coverage"]
+        return stats
 
     def to_dict(self) -> dict[str, object]:
         return {
             "schema_version": "1.0.0",
+            "metadata": self._metadata,
             "nodes": [asdict(node) for node in self._nodes.values()],
             "edges": [asdict(edge) for edge in self._edges],
         }
@@ -65,6 +88,8 @@ class GraphStore:
             payload = json.load(f)
 
         graph = cls()
+        for key, value in payload.get("metadata", {}).items():
+            graph.set_metadata(key, value)
         for row in payload.get("nodes", []):
             graph.add_node(Node(**row))
 

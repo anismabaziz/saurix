@@ -100,6 +100,27 @@ clear
 exit
 ```
 
+### Stats quality reporting
+
+`stats` now includes quality and coverage signals:
+
+- confidence distribution (count + %) for edges: `high`, `medium`, `low`
+- extraction coverage per language:
+  - files seen
+  - files indexed
+  - coverage percentage
+  - parser mode (`ast`, `tree-sitter`, `regex-fallback`, `stub`)
+
+```mermaid
+flowchart LR
+    A[Extracted Edges] --> B[Confidence Buckets]
+    B --> C[high/medium/low %]
+    D[Scanned Files by Language] --> E[Indexed Files by Language]
+    E --> F[Coverage % + Parser Mode]
+    C --> G[stats panel]
+    F --> G
+```
+
 ---
 
 ## 5) What is a symbol?
@@ -128,7 +149,7 @@ Tip: use `find <text>` first to discover valid symbol IDs.
 
 ```mermaid
 flowchart LR
-    A[CLI Shell\ncode_atlas/cli.py] --> B[Repo Source\nrepo_source.py]
+    A[CLI Shell\ncode_atlas/cli/app.py] --> B[Repo Source\nrepo_source.py]
     B --> C[Scanner\nscanner.py]
     C --> D[Indexer\nindexer.py]
     D --> E1[Python Extractor\nextractors/python_extractor.py]

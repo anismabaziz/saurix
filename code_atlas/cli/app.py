@@ -4,22 +4,11 @@ import argparse
 import shlex
 from pathlib import Path
 
-from .cli_commands import (
-    ShellState,
-    cmd_callers,
-    cmd_find,
-    cmd_impact,
-    cmd_index,
-    cmd_load,
-    cmd_path,
-    cmd_related,
-    cmd_stats,
-    cmd_where,
-)
-from .cli_extra_commands import cmd_export, cmd_visual
-from .cli_help import interactive_help
-from .cli_ui import ASCII_LOGO, UI, clear_screen
-from .graph import GraphStore
+from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
+from .extra_commands import cmd_export, cmd_visual
+from .help import interactive_help
+from .ui import ASCII_LOGO, UI, clear_screen
+from ..graph import GraphStore
 
 
 DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
@@ -27,17 +16,13 @@ DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
 
 def run_shell(graph_path: Path) -> int:
     ui = UI()
-    loaded_graph = GraphStore.from_json(graph_path) if graph_path.exists() else None
-    state = ShellState(ui=ui, graph_path=graph_path, loaded_graph=loaded_graph)
-
+    state = ShellState(ui=ui, graph_path=graph_path, loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None)
     print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
     ui.header("Code Atlas Interactive")
     ui.muted("Type 'help' for commands, 'exit' to quit.")
 
     while True:
-        prompt = ui.c("atlas", ui.BOLD + ui.CYAN)
-        prompt += ui.c(f"[{state.graph_path.name if state.loaded_graph else 'no-graph'}]", ui.DIM)
-        prompt += ui.c(" > ", ui.BOLD)
+        prompt = ui.c("atlas", ui.BOLD + ui.CYAN) + ui.c(f"[{state.graph_path.name if state.loaded_graph else 'no-graph'}]", ui.DIM) + ui.c(" > ", ui.BOLD)
         try:
             raw = input(prompt).strip()
         except (EOFError, KeyboardInterrupt):
@@ -95,10 +80,7 @@ def run_shell(graph_path: Path) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="code-atlas",
-        description="Interactive knowledge graph CLI for AI code exploration.",
-    )
+    parser = argparse.ArgumentParser(prog="code-atlas", description="Interactive knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     return parser
 
