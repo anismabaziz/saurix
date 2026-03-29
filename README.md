@@ -307,3 +307,17 @@ Tool responses follow a structured shape:
   "meta": { "duration_ms": 12 }
 }
 ```
+
+Client setup and examples:
+
+- MCP client snippets: `docs/mcp-configs.md`
+- 5-call walkthrough demo: `demo-mcp.md`
+
+### Portfolio demo assets (screenshots / GIFs)
+
+Add these files and reference them in your portfolio:
+
+- `docs/assets/cli-workflow.png` - interactive CLI indexing/query flow
+- `docs/assets/visual-workflow.png` - graph UI with filters and path highlight
+- `docs/assets/mcp-workflow.png` - MCP tool-call sequence and outputs
+- `docs/assets/code-atlas-demo.gif` - short end-to-end animated demo
