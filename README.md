@@ -126,11 +126,17 @@ flowchart LR
     B --> C[Scanner\nscanner.py]
     C --> D[Indexer\nindexer.py]
     D --> E1[Python Extractor\nextractors/python_extractor.py]
-    D --> E2[Stub Extractor\nextractors/stub_extractor.py]
+    D --> E2[TypeScript Extractor\nextractors/typescript_extractor.py]
+    D --> E3[Go Extractor\nextractors/go_extractor.py]
+    D --> E4[Stub Extractor\nextractors/stub_extractor.py]
     E1 --> F[Resolver\nimports/self/local symbols]
-    E2 --> G[File Nodes]
+    E2 --> G[TS Nodes + Edges]
+    E3 --> H2[Go Nodes + Edges]
+    E4 --> G2[File Nodes]
     F --> H[Graph Store\ngraph.py + models.py]
     G --> H
+    H2 --> H
+    G2 --> H
     H --> I[Query Engine\nquery.py]
     H --> J[Exporters\nexporters.py]
     I --> K[find/callers/path/impact]
@@ -218,6 +224,7 @@ export neo4j --out tmp/neo4j
 ## 11) Current limitations
 
 - Deep semantic extraction is strongest for Python right now.
+- TypeScript and Go are supported with regex-based semantic extraction.
 - Other languages currently use a fallback file-level extractor.
 - Dynamic runtime behavior cannot be perfectly resolved statically.
 

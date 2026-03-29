@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .extractors import PythonExtractor, StubExtractor
+from .extractors import GoExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
 from .graph import GraphStore
 from .models import Node
 from .scanner import detect_language, scan_source_files
@@ -30,7 +30,11 @@ def build_graph(repo_root: Path) -> IndexResult:
         )
     )
 
-    python_extractor = PythonExtractor()
+    extractors = {
+        "python": PythonExtractor(),
+        "typescript": TypeScriptExtractor(),
+        "go": GoExtractor(),
+    }
     indexed = 0
 
     for file_path in files:
@@ -38,8 +42,9 @@ def build_graph(repo_root: Path) -> IndexResult:
         if lang is None:
             continue
 
-        if lang == "python":
-            python_extractor.extract(repo_root=root, file_path=file_path, graph=graph)
+        extractor = extractors.get(lang)
+        if extractor is not None:
+            extractor.extract(repo_root=root, file_path=file_path, graph=graph)
             indexed += 1
         else:
             StubExtractor(lang).extract(repo_root=root, file_path=file_path, graph=graph)
