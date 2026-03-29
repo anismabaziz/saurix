@@ -14,12 +14,49 @@ def name_of(node: ast.AST) -> str | None:
     return None
 
 
-def call_confidence(raw_name: str, resolved: str) -> str:
-    if resolved.startswith("python://") and raw_name == resolved.removeprefix("python://"):
-        return "low"
+def call_confidence(raw_name: str, resolved: str, imports: dict[str, str]) -> str:
+    head = raw_name.split(".", 1)[0]
+
     if ":" in resolved:
         return "high"
+
+    if head in imports:
+        return "high" if "." in raw_name else "medium"
+
+    if resolved.startswith("python://") and raw_name == resolved.removeprefix("python://"):
+        if head in _BUILTIN_CALLS:
+            return "medium"
+        return "low"
+
+    if "." in raw_name:
+        return "medium"
+
     return "medium"
+
+
+_BUILTIN_CALLS = {
+    "print",
+    "len",
+    "str",
+    "int",
+    "float",
+    "dict",
+    "list",
+    "set",
+    "tuple",
+    "range",
+    "open",
+    "sum",
+    "min",
+    "max",
+    "sorted",
+    "enumerate",
+    "zip",
+    "map",
+    "filter",
+    "any",
+    "all",
+}
 
 
 def resolve_name(
