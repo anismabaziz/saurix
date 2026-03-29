@@ -14,6 +14,7 @@ def render_stats_panel(stats: dict[str, object], ui: UI) -> None:
     _render_counts("Node Types", stats.get("node_types", {}))
     _render_counts("Edge Types", stats.get("edge_types", {}))
     _render_counts("Languages", stats.get("languages", {}))
+    _render_incremental("Incremental Cache", stats.get("incremental_cache", {}))
 
 
 def _render_counts(title: str, data: object) -> None:
@@ -65,3 +66,15 @@ def render_table(title: str, rows: list[dict[str, str]], columns: list[tuple[str
                 text = text[: widths[key] - 3] + "..."
             vals.append(text.ljust(widths[key]))
         print(" | ".join(vals))
+
+
+def _render_incremental(title: str, data: object) -> None:
+    print(f"\n{title}")
+    print("-" * 68)
+    if not isinstance(data, dict):
+        return
+    print(f"enabled           {data.get('enabled', False)}")
+    print(f"cache_hits        {data.get('cache_hits', 0)}")
+    print(f"reindexed_files   {data.get('reindexed_files', 0)}")
+    print(f"deleted_files     {data.get('deleted_files', 0)}")
+    print(f"cache_path        {data.get('cache_path', '-')}")

@@ -38,6 +38,18 @@ Install dependencies first:
 uv sync
 ```
 
+Install command-line entry points in your current environment:
+
+```bash
+uv pip install -e .
+```
+
+Then run as a normal command-line app:
+
+```bash
+code-atlas
+```
+
 Start the interactive CLI:
 
 ```bash
@@ -120,6 +132,38 @@ flowchart LR
     C --> G[stats panel]
     F --> G
 ```
+
+### Incremental indexing cache
+
+Code Atlas now keeps an incremental cache at `tmp/code-atlas.cache.json`.
+
+How it works:
+
+1. Scan files and compute a content hash per file.
+2. Compare with previous cache entries (hash + language + parser mode).
+3. If unchanged, reuse cached nodes/edges (cache hit).
+4. If changed/new, re-extract only that file.
+5. If deleted, drop its cached contribution.
+6. Save updated graph + cache for next run.
+
+```mermaid
+flowchart LR
+    A[Scan Files] --> B[Hash + Compare Cache]
+    B --> C{Changed?}
+    C -- No --> D[Reuse cached contribution]
+    C -- Yes --> E[Re-extract file]
+    D --> F[Merge graph]
+    E --> F
+    F --> G[Write graph JSON]
+    F --> H[Write cache JSON]
+```
+
+`stats` includes an `Incremental Cache` section with:
+
+- `cache_hits`
+- `reindexed_files`
+- `deleted_files`
+- `cache_path`
 
 ---
 

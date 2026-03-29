@@ -32,6 +32,17 @@ class GraphStore:
     def add_edge(self, edge: Edge) -> None:
         self._edges.append(edge)
 
+    def snapshot_counts(self) -> tuple[int, int]:
+        """Return node/edge counts to compute per-file contribution deltas."""
+        return len(self._nodes), len(self._edges)
+
+    def contribution_since(self, start: tuple[int, int]) -> tuple[list[Node], list[Edge]]:
+        """Return new nodes/edges added after a snapshot."""
+        start_nodes, start_edges = start
+        nodes = list(self._nodes.values())[start_nodes:]
+        edges = self._edges[start_edges:]
+        return nodes, edges
+
     def set_metadata(self, key: str, value: object) -> None:
         self._metadata[key] = value
 
@@ -67,6 +78,8 @@ class GraphStore:
         }
         if "extraction_coverage" in self._metadata:
             stats["extraction_coverage"] = self._metadata["extraction_coverage"]
+        if "incremental_cache" in self._metadata:
+            stats["incremental_cache"] = self._metadata["incremental_cache"]
         return stats
 
     def to_dict(self) -> dict[str, object]:

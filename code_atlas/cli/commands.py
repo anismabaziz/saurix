@@ -50,6 +50,12 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
     print(f"  Scanned     : {result.scanned_files}")
     print(f"  Indexed     : {result.indexed_files}")
     print(f"  Nodes/Edges : {stats['nodes']} / {stats['edges']}")
+    inc = stats.get("incremental_cache", {}) if isinstance(stats, dict) else {}
+    if isinstance(inc, dict):
+        print("  Incremental :")
+        print(f"    Cache hits      : {inc.get('cache_hits', 0)}")
+        print(f"    Reindexed files : {inc.get('reindexed_files', 0)}")
+        print(f"    Deleted files   : {inc.get('deleted_files', 0)}")
 
 
 def cmd_load(state: ShellState, rest: list[str]) -> None:
