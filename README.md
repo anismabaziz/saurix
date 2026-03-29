@@ -68,6 +68,26 @@ code-atlas callers "python://pkg.module:foo" --graph code-atlas.graph.json
 code-atlas related-files src/app.py --graph code-atlas.graph.json --depth 2
 ```
 
+### Open interactive mode
+
+```bash
+code-atlas interactive --graph code-atlas.graph.json
+```
+
+You can also start interactive mode by running `code-atlas` with no subcommand.
+
+Interactive commands:
+
+- `help`
+- `index <repo> [--out PATH]`
+- `load [PATH]`
+- `stats`
+- `find <name> [--limit N]`
+- `callers <symbol> [--limit N]`
+- `related <file> [--depth N] [--limit N]`
+- `where`
+- `exit` / `quit`
+
 ## Architecture
 
 - `code_atlas/scanner.py`: language detection and file discovery
