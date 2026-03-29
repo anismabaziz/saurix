@@ -8,6 +8,16 @@ from pathlib import Path
 from .graph import GraphStore
 from .indexer import build_graph
 from .query import callers_of, find_symbol, related_files
+from .repo_source import prepare_repo_source
+
+
+ASCII_LOGO = r"""
+   ______          __        ___   __  __
+  / ____/___  ____/ /__     /   | / /_/ /___ ______
+ / /   / __ \/ __  / _ \   / /| |/ __/ / __ `/ ___/
+/ /___/ /_/ / /_/ /  __/  / ___ / /_/ / /_/ (__  )
+\____/\____/\__,_/\___/  /_/  |_\__/_/\__,_/____/
+"""
 
 
 def _print_json(payload: object) -> None:
@@ -63,7 +73,7 @@ def _interactive_help() -> str:
         [
             "Interactive commands:",
             "  help                                   Show this message",
-            "  index <repo> [--out PATH]              Index repository to graph JSON",
+            "  index <repo-or-github-url> [--out PATH] Index source to graph JSON",
             "  load [PATH]                            Load a graph JSON file",
             "  stats                                  Show graph statistics",
             "  find <name> [--limit N]                Find symbol by fuzzy name",
@@ -82,6 +92,7 @@ def _cmd_interactive(args: argparse.Namespace) -> int:
     if graph_path.exists():
         loaded_graph = GraphStore.from_json(graph_path)
 
+    print(ASCII_LOGO)
     print("Code Atlas interactive mode")
     print("Type 'help' for commands, 'exit' to quit.")
 
@@ -121,24 +132,32 @@ def _cmd_interactive(args: argparse.Namespace) -> int:
 
         if cmd == "index":
             if not rest:
-                print("Usage: index <repo> [--out PATH]")
+                print("Usage: index <repo-or-github-url> [--out PATH]")
                 continue
             out = graph_path
-            repo = Path(rest[0]).resolve()
+            source = rest[0]
 
             if "--out" in rest:
                 try:
                     out = Path(rest[rest.index("--out") + 1]).resolve()
                 except IndexError:
-                    print("Usage: index <repo> [--out PATH]")
+                    print("Usage: index <repo-or-github-url> [--out PATH]")
                     continue
 
-            result = build_graph(repo)
-            result.graph.write_json(out)
-            graph_path = out
-            loaded_graph = result.graph
-            stats = result.graph.stats()
-            print(f"Indexed {repo}")
+            try:
+                with prepare_repo_source(source) as (repo_path, source_kind):
+                    print(f"Preparing source: {source_kind}")
+                    result = build_graph(repo_path)
+                    result.graph.write_json(out)
+                    graph_path = out
+                    loaded_graph = result.graph
+                    stats = result.graph.stats()
+            except (ValueError, RuntimeError) as exc:
+                print(f"Index failed: {exc}")
+                continue
+
+            print(f"Indexed source: {source}")
+            print(f"Resolved path: {repo_path}")
             print(f"Scanned files: {result.scanned_files}")
             print(f"Indexed files: {result.indexed_files}")
             print(f"Nodes: {stats['nodes']} | Edges: {stats['edges']}")
@@ -220,42 +239,10 @@ def _cmd_interactive(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="code-atlas",
-        description="Polyglot codebase to knowledge graph indexer for AI agents.",
+        description="Interactive knowledge graph CLI for AI code exploration.",
     )
-    sub = parser.add_subparsers(dest="command")
-    parser.set_defaults(func=_cmd_interactive, graph="code-atlas.graph.json")
-
-    p_index = sub.add_parser("index", help="Index a repository and write graph JSON")
-    p_index.add_argument("repo", help="Repository root path")
-    p_index.add_argument("--out", default="code-atlas.graph.json", help="Output graph path")
-    p_index.set_defaults(func=_cmd_index)
-
-    p_stats = sub.add_parser("stats", help="Print graph statistics")
-    p_stats.add_argument("--graph", default="code-atlas.graph.json", help="Input graph JSON path")
-    p_stats.set_defaults(func=_cmd_stats)
-
-    p_find = sub.add_parser("find-symbol", help="Find symbol by fuzzy name")
-    p_find.add_argument("name", help="Name or id fragment")
-    p_find.add_argument("--graph", default="code-atlas.graph.json", help="Input graph JSON path")
-    p_find.add_argument("--limit", type=int, default=20)
-    p_find.set_defaults(func=_cmd_find_symbol)
-
-    p_callers = sub.add_parser("callers", help="List callers of a symbol")
-    p_callers.add_argument("symbol", help="Symbol id or exact symbol name")
-    p_callers.add_argument("--graph", default="code-atlas.graph.json", help="Input graph JSON path")
-    p_callers.add_argument("--limit", type=int, default=50)
-    p_callers.set_defaults(func=_cmd_callers)
-
-    p_related = sub.add_parser("related-files", help="Find files related by graph neighborhood")
-    p_related.add_argument("file", help="Repo-relative file path")
-    p_related.add_argument("--graph", default="code-atlas.graph.json", help="Input graph JSON path")
-    p_related.add_argument("--depth", type=int, default=2)
-    p_related.add_argument("--limit", type=int, default=100)
-    p_related.set_defaults(func=_cmd_related)
-
-    p_shell = sub.add_parser("interactive", help="Open interactive CLI mode")
-    p_shell.add_argument("--graph", default="code-atlas.graph.json", help="Graph JSON path to preload")
-    p_shell.set_defaults(func=_cmd_interactive)
+    parser.add_argument("--graph", default="code-atlas.graph.json", help="Graph JSON path to preload")
+    parser.set_defaults(func=_cmd_interactive)
 
     return parser
 

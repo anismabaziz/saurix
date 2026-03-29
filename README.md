@@ -38,48 +38,24 @@ Agents struggle with large repositories when context is only text chunks. This t
 
 ## CLI
 
-### Index a repository
+There is one command to run the tool:
 
 ```bash
-code-atlas index . --out code-atlas.graph.json
+code-atlas --graph code-atlas.graph.json
 ```
 
-### Print stats
+Or simply:
 
 ```bash
-code-atlas stats --graph code-atlas.graph.json
+code-atlas
 ```
 
-### Find symbols
-
-```bash
-code-atlas find-symbol UserService --graph code-atlas.graph.json
-```
-
-### Find callers
-
-```bash
-code-atlas callers "python://pkg.module:foo" --graph code-atlas.graph.json
-```
-
-### Find related files
-
-```bash
-code-atlas related-files src/app.py --graph code-atlas.graph.json --depth 2
-```
-
-### Open interactive mode
-
-```bash
-code-atlas interactive --graph code-atlas.graph.json
-```
-
-You can also start interactive mode by running `code-atlas` with no subcommand.
+When launched, Code Atlas opens an interactive shell with an ASCII logo and a prompt where you execute operations.
 
 Interactive commands:
 
 - `help`
-- `index <repo> [--out PATH]`
+- `index <repo-or-github-url> [--out PATH]`
 - `load [PATH]`
 - `stats`
 - `find <name> [--limit N]`
@@ -87,6 +63,17 @@ Interactive commands:
 - `related <file> [--depth N] [--limit N]`
 - `where`
 - `exit` / `quit`
+
+Index supports both local paths and GitHub URLs. Examples:
+
+```text
+index .
+index /absolute/path/to/repo --out my.graph.json
+index https://github.com/pallets/flask
+index https://github.com/psf/requests.git --out requests.graph.json
+```
+
+When a GitHub URL is used, Code Atlas does a shallow clone (`--depth 1`) into a temporary directory, indexes it, writes the graph, then cleans up the temporary clone.
 
 ## Architecture
 
@@ -106,8 +93,8 @@ The parser pipeline is intentionally split into small components so it can scale
 ### 1) Entry point and command layer
 
 - File: `code_atlas/cli.py`
-- Role: exposes commands (`index`, `stats`, `find-symbol`, `callers`, `related-files`).
-- `index` is the orchestration entry point: it calls `build_graph()` and writes graph JSON.
+- Role: launches one interactive shell where all operations are executed (`index`, `load`, `stats`, `find`, `callers`, `related`).
+- `index` is the orchestration entry point inside the shell: it resolves local paths or GitHub URLs, calls `build_graph()`, and writes graph JSON.
 
 ### 2) Repository scanning and language detection
 
