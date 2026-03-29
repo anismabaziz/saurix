@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Graph traversal queries: symbol resolution, shortest path, impact, subgraph."""
+
 from collections import defaultdict, deque
 
 from ..graph import GraphStore
@@ -7,6 +9,7 @@ from .basic import find_symbol
 
 
 def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[str]:
+    """Resolve user input to graph node IDs via exact then fuzzy matching."""
     if symbol in graph.nodes:
         return [symbol]
 
@@ -26,6 +29,7 @@ def shortest_path(
     edge_types: set[str] | None = None,
     max_depth: int = 12,
 ) -> list[dict[str, str]]:
+    """Return shortest directed path steps between source and target symbols."""
     allowed = edge_types or {"CALLS", "IMPORTS", "CONTAINS", "INHERITS"}
     source_ids = resolve_symbol_ids(graph, source_symbol)
     target_ids = set(resolve_symbol_ids(graph, target_symbol))
@@ -95,6 +99,7 @@ def impact_of(
     limit: int = 200,
     edge_types: set[str] | None = None,
 ) -> list[dict[str, str]]:
+    """Return reverse-neighborhood impact rows for a changed symbol."""
     allowed = edge_types or {"CALLS", "IMPORTS", "CONTAINS"}
     seeds = resolve_symbol_ids(graph, symbol)
     if not seeds:
@@ -141,6 +146,7 @@ def neighborhood_subgraph(
     depth: int = 2,
     limit: int = 120,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """Build bounded undirected neighborhood for visualization/export."""
     seeds = resolve_symbol_ids(graph, symbol)
     if not seeds:
         return [], []

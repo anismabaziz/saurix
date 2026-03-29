@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Interactive shell entrypoint and command dispatch loop."""
+
 import argparse
 import shlex
 from pathlib import Path
@@ -15,6 +17,7 @@ DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
 
 
 def run_shell(graph_path: Path) -> int:
+    """Start the REPL, keep shared shell state, and route user commands."""
     ui = UI()
     state = ShellState(ui=ui, graph_path=graph_path, loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None)
     print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
@@ -80,11 +83,13 @@ def run_shell(graph_path: Path) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build startup parser for one-command interactive mode."""
     parser = argparse.ArgumentParser(prog="code-atlas", description="Interactive knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     return parser
 
 
 def run(argv: list[str] | None = None) -> int:
+    """CLI public entrypoint used by main.py and project scripts."""
     args = build_parser().parse_args(argv)
     return run_shell(Path(args.graph).resolve())

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Interactive commands for export and browser visualization."""
+
 from pathlib import Path
 
 from .commands import ShellState
@@ -7,6 +9,7 @@ from ..exporters import build_visual_html, export_graphml, export_neo4j_csv
 
 
 def cmd_export(state: ShellState, rest: list[str]) -> None:
+    """Export active graph as GraphML or Neo4j CSV files."""
     if state.loaded_graph is None:
         state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
         return
@@ -27,6 +30,7 @@ def cmd_export(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_visual(state: ShellState, rest: list[str]) -> None:
+    """Generate and open interactive HTML subgraph view."""
     if state.loaded_graph is None:
         state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
         return
@@ -46,6 +50,7 @@ def cmd_visual(state: ShellState, rest: list[str]) -> None:
 
 
 def _parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
+    """Parse optional integer flag value from command tokens."""
     if flag not in parts:
         return default
     try:
@@ -55,6 +60,7 @@ def _parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
 
 
 def _parse_path_flag(parts: list[str], flag: str, default: Path) -> Path:
+    """Parse optional path flag value from command tokens."""
     if flag not in parts:
         return default.resolve()
     try:

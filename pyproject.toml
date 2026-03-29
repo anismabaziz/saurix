@@ -1,7 +1,7 @@
 [project]
 name = "code-atlas"
 version = "0.1.0"
-description = "Polyglot repository to knowledge graph CLI for AI agents"
+description = "Interactive CLI that indexes polyglot repositories into a queryable knowledge graph for AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

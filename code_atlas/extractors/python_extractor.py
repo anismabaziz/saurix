@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Python AST extractor that emits structural and behavioral graph edges."""
+
 import ast
 from pathlib import Path
 
@@ -15,6 +17,7 @@ class PythonExtractor(Extractor):
     language = "python"
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
+        """Parse one Python file and emit nodes/edges into the graph."""
         rel = file_path.relative_to(repo_root).as_posix()
         source = file_path.read_text(encoding="utf-8", errors="replace")
         try:
@@ -70,6 +73,7 @@ class PythonExtractor(Extractor):
         module_id: str,
         rel: str,
     ) -> tuple[dict[str, str], set[str], dict[str, set[str]]]:
+        """First pass: collect imports, top-level functions, and class methods."""
         imports: dict[str, str] = {}
         local_functions: set[str] = set()
         class_methods: dict[str, set[str]] = {}
@@ -111,6 +115,7 @@ class PythonExtractor(Extractor):
         local_functions: set[str],
         class_methods: set[str],
     ) -> None:
+        """Emit class inheritance edges using best-effort name resolution."""
         class_id = f"{module_id}:{class_node.name}"
         for base in class_node.bases:
             base_name = name_of(base)

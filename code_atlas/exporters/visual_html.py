@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Self-contained interactive HTML graph visualization exporter."""
+
 import html
 import json
 import webbrowser
@@ -18,6 +20,7 @@ def build_visual_html(
     limit: int = 120,
     open_browser: bool = True,
 ) -> Path:
+    """Generate an interactive subgraph HTML file and optionally open browser."""
     nodes, edges = neighborhood_subgraph(graph, symbol, depth=depth, limit=limit)
     out_html.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps({"nodes": nodes, "edges": edges, "symbol": symbol})
@@ -29,6 +32,7 @@ def build_visual_html(
 
 
 def _render_html(symbol: str, payload: str) -> str:
+    """Render static HTML + inline JS app for graph exploration."""
     safe_symbol = html.escape(symbol)
     return f"""<!doctype html>
 <html lang=\"en\"><head>

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Index orchestration: scan files, dispatch extractors, and compute coverage."""
+
 from pathlib import Path
 
 from .extractors import GoExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
@@ -16,6 +18,7 @@ class IndexResult:
 
 
 def build_graph(repo_root: Path) -> IndexResult:
+    """Build a graph for a repository root and attach extraction metadata."""
     root = repo_root.resolve()
     files = scan_source_files(root)
     graph = GraphStore()

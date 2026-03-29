@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""TypeScript extractor using Tree-sitter with regex fallback."""
+
 import re
 from pathlib import Path
 
@@ -28,6 +30,7 @@ class TypeScriptExtractor:
         self._parser = get_parser("typescript")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
+        """Extract module/import/function/call relationships from TS files."""
         if self._parser is None:
             self._fallback.extract(repo_root=repo_root, file_path=file_path, graph=graph)
             return
@@ -69,6 +72,7 @@ class TypeScriptExtractor:
             )
 
     def _extract_import(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str) -> None:
+        """Extract one import edge from a TS import statement node."""
         if node.type != "import_statement":
             return
         s = find_first_desc(node, {"string"})
@@ -82,6 +86,7 @@ class TypeScriptExtractor:
         add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
 
     def _extract_function_like(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, local_symbols: dict[str, str]) -> None:
+        """Extract function declarations and arrow-function variable bindings."""
         if node.type == "function_declaration":
             ident = find_first_desc(node, {"identifier"})
             if ident is None:
@@ -110,6 +115,7 @@ class TypeScriptExtractor:
         name: str,
         line: int,
     ) -> None:
+        """Create function node and containment edge for discovered symbol."""
         if not name:
             return
         fn_id = f"{module_id}:{name}"

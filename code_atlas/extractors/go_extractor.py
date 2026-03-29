@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Go extractor using Tree-sitter with regex fallback."""
+
 import re
 from pathlib import Path
 
@@ -22,6 +24,7 @@ class GoExtractor:
         self._parser = get_parser("go")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
+        """Extract module/import/function/call relationships from Go files."""
         if self._parser is None:
             self._fallback.extract(repo_root=repo_root, file_path=file_path, graph=graph)
             return
@@ -62,6 +65,7 @@ class GoExtractor:
             )
 
     def _extract_import(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str) -> None:
+        """Extract one import edge from a Go import spec node."""
         if node.type != "import_spec":
             return
         string_node = find_first_desc(node, {"interpreted_string_literal", "raw_string_literal"})
@@ -83,6 +87,7 @@ class GoExtractor:
         rel: str,
         local_symbols: dict[str, str],
     ) -> None:
+        """Extract function declaration and add module containment edge."""
         if node.type != "function_declaration":
             return
         ident = find_first_desc(node, {"identifier"})
