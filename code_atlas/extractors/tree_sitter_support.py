@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Iterator
+import warnings
 
 
 def get_parser(language: str):
@@ -10,7 +11,13 @@ def get_parser(language: str):
         return None
 
     try:
-        return _get_parser(language)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=FutureWarning,
+                message=r"Language\(path, name\) is deprecated.*",
+            )
+            return _get_parser(language)
     except Exception:
         return None
 

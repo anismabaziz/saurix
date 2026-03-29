@@ -32,6 +32,12 @@ Think of it as:
 
 ## 2) How to run
 
+Install dependencies first:
+
+```bash
+uv sync
+```
+
 Start the interactive CLI:
 
 ```bash
@@ -224,7 +230,7 @@ export neo4j --out tmp/neo4j
 ## 11) Current limitations
 
 - Deep semantic extraction is strongest for Python right now.
-- TypeScript and Go are supported with regex-based semantic extraction.
+- TypeScript and Go use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
 - Other languages currently use a fallback file-level extractor.
 - Dynamic runtime behavior cannot be perfectly resolved statically.
 
@@ -234,7 +240,7 @@ export neo4j --out tmp/neo4j
 
 ```mermaid
 flowchart LR
-    A[Tree-sitter extractors\nJS/TS/Go/Java] --> B[Better symbol resolution]
+    A[Tree-sitter expansion\nJS/Java + richer TS/Go] --> B[Better symbol resolution]
     B --> C[Incremental indexing cache]
     C --> D[More query intelligence]
 ```

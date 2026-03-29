@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Polyglot repository to knowledge graph CLI for AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "tree-sitter>=0.21,<0.22",
+    "tree-sitter-languages>=1.10.2",
+]
 
 [project.scripts]
 code-atlas = "code_atlas.cli:run"
