@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import json
-import shutil
+from collections.abc import Callable
+from typing import Any
+
+from rich.console import Console
+from rich.json import JSON
+from rich.text import Text
 
 
 ASCII_LOGO = r"""
@@ -14,43 +19,67 @@ ASCII_LOGO = r"""
 
 
 class UI:
-    RESET = "\033[0m"
-    DIM = "\033[2m"
-    BOLD = "\033[1m"
-    RED = "\033[31m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    BLUE = "\033[34m"
-    CYAN = "\033[36m"
+    BOLD = "bold"
+    DIM = "dim"
+    BLUE = "blue"
+    CYAN = "cyan"
+    def __init__(
+        self,
+        console: Console | None = None,
+        sink: Callable[[Any], None] | None = None,
+        allow_blocking_input: bool = True,
+    ) -> None:
+        self.console = console or Console()
+        self._sink = sink
+        self.allow_blocking_input = allow_blocking_input
 
-    def __init__(self) -> None:
-        self.use_color = bool(shutil.which("tput"))
+    def set_sink(self, sink: Callable[[Any], None] | None) -> None:
+        self._sink = sink
 
-    def c(self, text: str, color: str) -> str:
-        return f"{color}{text}{self.RESET}" if self.use_color else text
+    def c(self, text: str, style: str) -> str:
+        return f"[{style}]{text}[/]"
+
+    def prompt(self, provider: str, graph_name: str) -> str:
+        parts = [
+            self.c("atlas", "bold cyan"),
+            self.c(f"<{provider}>", "blue"),
+            self.c(f"[{graph_name}]", "dim"),
+            self.c(" > ", "bold"),
+        ]
+        return "".join(parts)
+
+    def print(self, text: Any = "") -> None:
+        if self._sink is not None:
+            self._sink(text)
+            return
+        self.console.print(text)
 
     def header(self, text: str) -> None:
-        print(self.c(text, self.BOLD + self.CYAN))
+        self.print(Text(text, style="bold cyan"))
 
     def info(self, text: str) -> None:
-        print(self.c(text, self.BLUE))
+        self.print(Text(text, style="bright_blue"))
 
     def success(self, text: str) -> None:
-        print(self.c(text, self.GREEN))
+        self.print(Text(text, style="bold green"))
 
     def warn(self, text: str) -> None:
-        print(self.c(text, self.YELLOW))
+        self.print(Text(text, style="bold yellow"))
 
     def error(self, text: str) -> None:
-        print(self.c(text, self.RED))
+        self.print(Text(text, style="bold red"))
 
     def muted(self, text: str) -> None:
-        print(self.c(text, self.DIM))
+        self.print(Text(text, style="dim"))
 
 
-def print_json(payload: object) -> None:
-    print(json.dumps(payload, indent=2, sort_keys=True))
+def print_json(payload: object, ui: UI | None = None) -> None:
+    rendered = JSON.from_data(payload)
+    if ui is not None:
+        ui.print(rendered)
+        return
+    Console().print_json(data=json.dumps(payload))
 
 
 def clear_screen() -> None:
-    print("\033[2J\033[H", end="")
+    Console().clear()

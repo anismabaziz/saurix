@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .render import render_stats_panel, render_table
+from .render import render_index_summary, render_stats_panel, render_table
 from .ui import UI, print_json
 from ..graph import GraphStore
 from ..indexer import build_graph
@@ -46,18 +46,21 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         state.ui.error(f"Index failed: {exc}")
         return
     state.ui.success("Index completed")
-    print(f"  Source      : {source}")
-    print(f"  Resolved    : {repo_path}")
-    print(f"  Output      : {state.graph_path}")
-    print(f"  Scanned     : {result.scanned_files}")
-    print(f"  Indexed     : {result.indexed_files}")
-    print(f"  Nodes/Edges : {stats['nodes']} / {stats['edges']}")
+    summary: dict[str, object] = {
+        "source": source,
+        "resolved": repo_path,
+        "output": state.graph_path,
+        "scanned_files": result.scanned_files,
+        "indexed_files": result.indexed_files,
+        "nodes": stats.get("nodes", 0) if isinstance(stats, dict) else 0,
+        "edges": stats.get("edges", 0) if isinstance(stats, dict) else 0,
+    }
     inc = stats.get("incremental_cache", {}) if isinstance(stats, dict) else {}
     if isinstance(inc, dict):
-        print("  Incremental :")
-        print(f"    Cache hits      : {inc.get('cache_hits', 0)}")
-        print(f"    Reindexed files : {inc.get('reindexed_files', 0)}")
-        print(f"    Deleted files   : {inc.get('deleted_files', 0)}")
+        summary["cache_hits"] = inc.get("cache_hits", 0)
+        summary["reindexed_files"] = inc.get("reindexed_files", 0)
+        summary["deleted_files"] = inc.get("deleted_files", 0)
+    render_index_summary(summary, state.ui)
 
 
 def cmd_load(state: ShellState, rest: list[str]) -> None:
@@ -76,7 +79,7 @@ def cmd_stats(state: ShellState) -> None:
     if not _ensure_graph(state):
         return
     stats = state.loaded_graph.stats()
-    print_json(stats) if state.raw_mode else render_stats_panel(stats, state.ui)
+    print_json(stats, state.ui) if state.raw_mode else render_stats_panel(stats, state.ui)
 
 
 def cmd_find(state: ShellState, rest: list[str]) -> None:
@@ -89,7 +92,7 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
     rows = find_symbol(state.loaded_graph, rest[0], limit=limit)
-    print_json(rows) if state.raw_mode else render_table("Find Results", rows, [("type", "TYPE"), ("name", "NAME"), ("id", "ID"), ("file", "FILE")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table("Find Results", rows, [("type", "TYPE"), ("name", "NAME"), ("id", "ID"), ("file", "FILE")], state.ui)
 
 
 def cmd_callers(state: ShellState, rest: list[str]) -> None:
@@ -102,7 +105,7 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
     rows = callers_of(state.loaded_graph, rest[0], limit=limit)
-    print_json(rows) if state.raw_mode else render_table("Callers", rows, [("caller_name", "CALLER"), ("caller", "CALLER_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table("Callers", rows, [("caller_name", "CALLER"), ("caller", "CALLER_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
 
 
 def cmd_related(state: ShellState, rest: list[str]) -> None:
@@ -115,7 +118,7 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
     rows = [{"file": p} for p in related_files(state.loaded_graph, rest[0], depth=depth, limit=limit)]
-    print_json([row["file"] for row in rows]) if state.raw_mode else render_table("Related Files", rows, [("file", "FILE")], state.ui)
+    print_json([row["file"] for row in rows], state.ui) if state.raw_mode else render_table("Related Files", rows, [("file", "FILE")], state.ui)
 
 
 def cmd_path(state: ShellState, rest: list[str]) -> None:
@@ -128,7 +131,7 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
     rows = shortest_path(state.loaded_graph, rest[0], rest[1], max_depth=max_depth)
-    print_json(rows) if state.raw_mode else render_table("Path", rows, [("step", "STEP"), ("edge", "EDGE"), ("type", "TYPE"), ("name", "NAME"), ("id", "ID")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table("Path", rows, [("step", "STEP"), ("edge", "EDGE"), ("type", "TYPE"), ("name", "NAME"), ("id", "ID")], state.ui)
 
 
 def cmd_impact(state: ShellState, rest: list[str]) -> None:
@@ -141,7 +144,7 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
     rows = impact_of(state.loaded_graph, rest[0], depth=depth, limit=limit)
-    print_json(rows) if state.raw_mode else render_table("Blast Radius", rows, [("distance", "DIST"), ("via", "VIA"), ("type", "TYPE"), ("name", "NAME"), ("file", "FILE")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table("Blast Radius", rows, [("distance", "DIST"), ("via", "VIA"), ("type", "TYPE"), ("name", "NAME"), ("file", "FILE")], state.ui)
 
 
 def _ensure_graph(state: ShellState) -> bool:

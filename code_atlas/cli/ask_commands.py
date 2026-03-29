@@ -33,4 +33,4 @@ def cmd_ask(state: ShellState, rest: list[str], provider: str, model: str | None
         return
 
     state.ui.header("\nAI Answer")
-    print(answer)
+    state.ui.print(answer)

@@ -83,6 +83,10 @@ Default graph file is:
 
 `tmp/code-atlas.graph.json`
 
+### TUI preview
+
+![Code Atlas Textual TUI](docs/assets/tui-preview.png)
+
 ---
 
 ## 3) Typical workflow

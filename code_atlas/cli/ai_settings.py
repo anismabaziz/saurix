@@ -21,7 +21,13 @@ def cmd_set_key(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Provider must be one of: openai, anthropic, google")
         return
 
-    key = rest[1] if len(rest) > 1 else getpass(f"Enter {provider} API key (hidden): ")
+    if len(rest) > 1:
+        key = rest[1]
+    else:
+        if not state.ui.allow_blocking_input:
+            state.ui.warn("Usage in TUI: set-key <provider> <api_key>")
+            return
+        key = getpass(f"Enter {provider} API key (hidden): ")
     if not key.strip():
         state.ui.warn("API key cannot be empty")
         return
@@ -61,9 +67,9 @@ def cmd_providers(state: ShellState) -> None:
     state.ui.header("\nAI Providers")
     for name, conf in DEFAULTS.items():
         active = " (active)" if name == state.provider else ""
-        print(f"- {name}{active}")
-        print(f"  default model: {conf.model}")
-        print(f"  api key env : {conf.api_key_env}")
+        state.ui.print(f"- {name}{active}")
+        state.ui.print(f"  default model: {conf.model}")
+        state.ui.print(f"  api key env : {conf.api_key_env}")
 
 
 def cmd_models(state: ShellState, rest: list[str]) -> None:
@@ -75,18 +81,18 @@ def cmd_models(state: ShellState, rest: list[str]) -> None:
 
     state.ui.header(f"\nModels ({provider})")
     if provider == "openai":
-        print("- gpt-4o-mini")
-        print("- gpt-4.1-mini")
-        print("- gpt-4.1")
-        print("- o4-mini")
+        state.ui.print("- gpt-4o-mini")
+        state.ui.print("- gpt-4.1-mini")
+        state.ui.print("- gpt-4.1")
+        state.ui.print("- o4-mini")
         return
 
     if provider == "anthropic":
-        print("- claude-3-5-haiku-latest")
-        print("- claude-3-5-sonnet-latest")
-        print("- claude-3-7-sonnet-latest")
+        state.ui.print("- claude-3-5-haiku-latest")
+        state.ui.print("- claude-3-5-sonnet-latest")
+        state.ui.print("- claude-3-7-sonnet-latest")
         return
 
-    print("- gemini-2.5-flash (default)")
-    print("- gemini-2.5-pro")
-    print("- gemini-2.0-flash")
+    state.ui.print("- gemini-2.5-flash (default)")
+    state.ui.print("- gemini-2.5-pro")
+    state.ui.print("- gemini-2.0-flash")
