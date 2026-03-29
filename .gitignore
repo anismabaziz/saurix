@@ -34,8 +34,5 @@ htmlcov/
 # Local runtime files
 *.log
 
-# Generated graph output
-code-atlas.graph.json
-
-# Local JSON artifacts
-*.json
+# Generated artifacts
+tmp/

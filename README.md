@@ -41,7 +41,7 @@ Agents struggle with large repositories when context is only text chunks. This t
 There is one command to run the tool:
 
 ```bash
-code-atlas --graph code-atlas.graph.json
+code-atlas --graph tmp/code-atlas.graph.json
 ```
 
 Or simply:
@@ -61,8 +61,15 @@ Interactive commands:
 - `find <name> [--limit N]`
 - `callers <symbol> [--limit N]`
 - `related <file> [--depth N] [--limit N]`
+- `path <from> <to> [--max-depth N]`
+- `impact <symbol> [--depth N] [--limit N]`
+- `export graphml [--out PATH]`
+- `export neo4j [--out DIR]`
+- `visual <symbol> [--depth N] [--limit N] [--out PATH]`
 - `where`
 - `exit` / `quit`
+
+Default graph output path is `tmp/code-atlas.graph.json`.
 
 Index supports both local paths and GitHub URLs. Examples:
 
@@ -75,6 +82,32 @@ index https://github.com/psf/requests.git --out requests.graph.json
 
 When a GitHub URL is used, Code Atlas does a shallow clone (`--depth 1`) into a temporary directory, indexes it, writes the graph, then cleans up the temporary clone.
 
+### Graph export and visual exploration
+
+- `export graphml` writes a GraphML file (great for Gephi or other graph tools).
+- `export neo4j` writes `nodes.csv` and `edges.csv` for Neo4j bulk import.
+- `visual <symbol>` generates and opens a browser-based interactive subgraph around that symbol.
+
+Examples:
+
+```text
+export graphml --out tmp/repo.graphml
+export neo4j --out tmp/neo4j
+visual login --depth 2 --limit 120 --out tmp/login-view.html
+```
+
+### Path tracing and blast radius
+
+- `path <from> <to>` finds the shortest directed graph path between two symbols.
+- `impact <symbol>` computes reverse-neighborhood impact (what likely breaks if this changes).
+
+Examples:
+
+```text
+path python://pkg.auth:login python://pkg.db:execute --max-depth 10
+impact python://pkg.auth:login --depth 3 --limit 200
+```
+
 ## Architecture
 
 - `code_atlas/scanner.py`: language detection and file discovery
@@ -85,6 +118,35 @@ When a GitHub URL is used, Code Atlas does a shallow clone (`--depth 1`) into a 
 - `code_atlas/indexer.py`: orchestration layer for multi-language indexing
 - `code_atlas/query.py`: graph query helpers for agent workflows
 - `code_atlas/cli.py`: CLI surface
+
+### Architecture diagram
+
+```mermaid
+flowchart LR
+    A[CLI Shell\ncode_atlas/cli.py] --> B[Source Resolver\ncode_atlas/repo_source.py]
+    B --> C[Scanner\ncode_atlas/scanner.py]
+    C --> D[Extractor Router\ncode_atlas/indexer.py]
+    D --> E1[Python Extractor\ncode_atlas/extractors/python_extractor.py]
+    D --> E2[Stub Extractor\ncode_atlas/extractors/stub_extractor.py]
+    E1 --> F[Resolver Logic\nimports + local symbols + self.method]
+    E2 --> G[File-level Nodes]
+    F --> H[Graph Store\ncode_atlas/graph.py + models.py]
+    G --> H
+    H --> I[Query Engine\ncode_atlas/query.py]
+    H --> J[Exporters\ncode_atlas/exporters.py]
+    I --> K[Interactive Commands\nfind/callers/path/impact/related]
+    J --> L[Outputs\nJSON, GraphML, Neo4j CSV, HTML Visual]
+```
+
+Pipeline summary:
+
+1. CLI accepts a local path or GitHub URL.
+2. Source resolver prepares the repository (local or shallow clone).
+3. Scanner discovers source files and detects language.
+4. Indexer routes each file to a language extractor.
+5. Extractors parse code, resolve symbols, and emit nodes/edges.
+6. Graph store persists a normalized knowledge graph.
+7. Query engine and exporters power interactive analysis and external integrations.
 
 ## How the parser works (detailed)
 
