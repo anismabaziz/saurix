@@ -1,0 +1,69 @@
+{
+  "confidence_counts": {
+    "high": 12282,
+    "low": 16892,
+    "medium": 2040
+  },
+  "confidence_percentages": {
+    "high": 39.35,
+    "low": 54.12,
+    "medium": 6.54
+  },
+  "edge_types": {
+    "CALLS": 23692,
+    "CONTAINS": 4084,
+    "IMPORTS": 3392,
+    "INHERITS": 46
+  },
+  "edges": 31214,
+  "extraction_coverage": {
+    "java": {
+      "coverage_percent": 100.0,
+      "files_indexed": 259,
+      "files_seen": 259,
+      "parser_mode": "tree-sitter"
+    },
+    "javascript": {
+      "coverage_percent": 100.0,
+      "files_indexed": 274,
+      "files_seen": 274,
+      "parser_mode": "stub"
+    },
+    "python": {
+      "coverage_percent": 100.0,
+      "files_indexed": 123,
+      "files_seen": 123,
+      "parser_mode": "ast"
+    },
+    "typescript": {
+      "coverage_percent": 100.0,
+      "files_indexed": 6,
+      "files_seen": 6,
+      "parser_mode": "tree-sitter"
+    }
+  },
+  "incremental_cache": {
+    "cache_hits": 38,
+    "cache_path": "/Users/abaziz/Documents/programming/portfolio-projects/code-atlas/tmp/code-atlas.cache.json",
+    "deleted_files": 0,
+    "enabled": true,
+    "reindexed_files": 624
+  },
+  "languages": {
+    "java": 2277,
+    "javascript": 274,
+    "meta": 1,
+    "python": 2593,
+    "typescript": 52
+  },
+  "node_types": {
+    "class": 96,
+    "file": 274,
+    "function": 611,
+    "method": 1217,
+    "module": 804,
+    "repo": 1,
+    "symbol": 2194
+  },
+  "nodes": 5197
+}

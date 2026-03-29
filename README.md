@@ -382,3 +382,8 @@ Add these files and reference them in your portfolio:
 - `docs/assets/visual-workflow.png` - graph UI with filters and path highlight
 - `docs/assets/mcp-workflow.png` - MCP tool-call sequence and outputs
 - `docs/assets/code-atlas-demo.gif` - short end-to-end animated demo
+
+Demo helpers:
+
+- `scripts/demo_runs.py` - generates reproducible CLI/MCP/visual demo outputs
+- `docs/demo-capture.md` - capture instructions for screenshots and GIF
