@@ -19,6 +19,8 @@ class ShellState:
     graph_path: Path
     loaded_graph: GraphStore | None
     raw_mode: bool = False
+    provider: str = "google"
+    model: str | None = None
 
 
 def cmd_where(state: ShellState) -> None:

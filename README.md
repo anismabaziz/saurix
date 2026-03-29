@@ -50,6 +50,23 @@ Then run as a normal command-line app:
 code-atlas
 ```
 
+Ask mode supports provider selection:
+
+```bash
+code-atlas --provider openai
+code-atlas --provider anthropic
+code-atlas --provider google
+```
+
+Google default model: `gemini-2.5-flash`
+Default provider: `google`
+
+Optional model override:
+
+```bash
+code-atlas --provider openai --model gpt-4o-mini
+```
+
 Start the interactive CLI:
 
 ```bash
@@ -103,6 +120,12 @@ callers <symbol> [--limit N]
 related <file> [--depth N] [--limit N]
 path <from> <to> [--max-depth N]
 impact <symbol> [--depth N] [--limit N]
+ask <question>
+set-key <openai|anthropic|google> [api_key]
+set-provider <openai|anthropic|google>
+set-model [model_name]
+providers
+models [provider]
 export graphml [--out PATH]
 export neo4j [--out DIR]
 visual <symbol> [--depth N] [--limit N] [--out PATH]
@@ -110,6 +133,34 @@ raw on|off
 where
 clear
 exit
+```
+
+### Built-in AI assistant
+
+The `ask` command uses graph-derived context (symbol matches, callers, impact) and sends only that structured context to an LLM.
+Model selection is static by default (no live auto-switching).
+
+Supported providers and API keys:
+
+- OpenAI: `OPENAI_API_KEY`
+- Anthropic: `ANTHROPIC_API_KEY`
+- Google: `GOOGLE_API_KEY`
+
+You can set keys directly inside the CLI for the current session:
+
+```text
+providers
+models google
+set-key openai
+set-provider openai
+set-model gpt-4o-mini
+ask summarize the auth module impact
+```
+
+Example:
+
+```text
+ask what breaks if i change find_symbol
 ```
 
 ### Stats quality reporting

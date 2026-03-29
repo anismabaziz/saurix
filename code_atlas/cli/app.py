@@ -6,6 +6,8 @@ import argparse
 import shlex
 from pathlib import Path
 
+from .ask_commands import cmd_ask
+from .ai_settings import cmd_models, cmd_providers, cmd_set_key, cmd_set_model, cmd_set_provider
 from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
 from .extra_commands import cmd_export, cmd_visual
 from .help import interactive_help
@@ -16,16 +18,24 @@ from ..graph import GraphStore
 DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
 
 
-def run_shell(graph_path: Path) -> int:
+def run_shell(graph_path: Path, provider: str, model: str | None) -> int:
     """Start the REPL, keep shared shell state, and route user commands."""
     ui = UI()
-    state = ShellState(ui=ui, graph_path=graph_path, loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None)
+    state = ShellState(
+        ui=ui,
+        graph_path=graph_path,
+        loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None,
+        provider=provider,
+        model=model,
+    )
     print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
     ui.header("Code Atlas Interactive")
-    ui.muted("Type 'help' for commands, 'exit' to quit.")
+    ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
 
     while True:
-        prompt = ui.c("atlas", ui.BOLD + ui.CYAN) + ui.c(f"[{state.graph_path.name if state.loaded_graph else 'no-graph'}]", ui.DIM) + ui.c(" > ", ui.BOLD)
+        prompt = ui.c("atlas", ui.BOLD + ui.CYAN)
+        prompt += ui.c(f"[{state.graph_path.name if state.loaded_graph else 'no-graph'}]", ui.DIM)
+        prompt += ui.c(" > ", ui.BOLD)
         try:
             raw = input(prompt).strip()
         except (EOFError, KeyboardInterrupt):
@@ -33,6 +43,7 @@ def run_shell(graph_path: Path) -> int:
             return 0
         if not raw:
             continue
+
         try:
             parts = shlex.split(raw)
         except ValueError as exc:
@@ -49,7 +60,7 @@ def run_shell(graph_path: Path) -> int:
             clear_screen()
             print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
             ui.header("Code Atlas Interactive")
-            ui.muted("Type 'help' for commands, 'exit' to quit.")
+            ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
         elif cmd == "raw":
             if rest and rest[0] in {"on", "off"}:
                 state.raw_mode = rest[0] == "on"
@@ -74,6 +85,18 @@ def run_shell(graph_path: Path) -> int:
             cmd_path(state, rest)
         elif cmd == "impact":
             cmd_impact(state, rest)
+        elif cmd == "ask":
+            cmd_ask(state, rest, provider=state.provider, model=state.model)
+        elif cmd == "set-key":
+            cmd_set_key(state, rest)
+        elif cmd == "set-provider":
+            cmd_set_provider(state, rest)
+        elif cmd == "set-model":
+            cmd_set_model(state, rest)
+        elif cmd == "providers":
+            cmd_providers(state)
+        elif cmd == "models":
+            cmd_models(state, rest)
         elif cmd == "export":
             cmd_export(state, rest)
         elif cmd == "visual":
@@ -86,10 +109,12 @@ def build_parser() -> argparse.ArgumentParser:
     """Build startup parser for one-command interactive mode."""
     parser = argparse.ArgumentParser(prog="code-atlas", description="Interactive knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
+    parser.add_argument("--provider", choices=["openai", "anthropic", "google"], default="google", help="LLM provider for ask command")
+    parser.add_argument("--model", default=None, help="Optional model override for provider")
     return parser
 
 
 def run(argv: list[str] | None = None) -> int:
     """CLI public entrypoint used by main.py and project scripts."""
     args = build_parser().parse_args(argv)
-    return run_shell(Path(args.graph).resolve())
+    return run_shell(Path(args.graph).resolve(), args.provider, args.model)
