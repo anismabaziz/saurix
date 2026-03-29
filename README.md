@@ -230,6 +230,16 @@ Default artifact locations (under git-ignored `tmp/`):
 - `tmp/neo4j/nodes.csv`
 - `tmp/neo4j/edges.csv`
 
+### Visual features
+
+The browser graph now includes:
+
+- search by node name/id
+- edge-type filters (`CALLS`, `IMPORTS`, `CONTAINS`, `INHERITS`)
+- confidence-colored edges
+- interactive node details panel
+- zoom/pan/drag with `Fit`, `Pause/Resume`, and `Reset` controls
+
 ---
 
 ## 10) Example session
