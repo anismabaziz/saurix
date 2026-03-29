@@ -1,5 +1,7 @@
 # Code Atlas
 
+![Code Atlas Textual TUI](docs/assets/tui-preview.png)
+
 Code Atlas turns a repo into a **knowledge graph** so humans and AI agents can explore code structure fast.
 
 Instead of reading files one-by-one, you can ask:
@@ -82,10 +84,6 @@ uv run python main.py
 Default graph file is:
 
 `tmp/code-atlas.graph.json`
-
-### TUI preview
-
-![Code Atlas Textual TUI](docs/assets/tui-preview.png)
 
 ---
 

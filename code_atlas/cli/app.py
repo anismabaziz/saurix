@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Interactive shell entrypoint and command dispatch loop."""
+"""Textual app entrypoint and command dispatch."""
 
 import argparse
 import shlex
@@ -12,17 +12,11 @@ from .ai_settings import cmd_models, cmd_providers, cmd_set_key, cmd_set_model, 
 from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
 from .extra_commands import cmd_export, cmd_visual
 from .help import interactive_help
-from .ui import ASCII_LOGO, UI, clear_screen
+from .ui import UI, clear_screen
 from ..graph import GraphStore
 
 
 DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
-
-
-def _render_banner(ui: UI, provider: str) -> None:
-    ui.print(ui.c(ASCII_LOGO, "bold cyan"))
-    ui.header("Code Atlas Interactive")
-    ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
 
 
 def create_state(graph_path: Path, provider: str, model: str | None, ui: UI) -> ShellState:
@@ -105,45 +99,18 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
     return True
 
 
-def run_shell(graph_path: Path, provider: str, model: str | None) -> int:
-    """Start the REPL, keep shared shell state, and route user commands."""
-    ui = UI()
-    state = create_state(graph_path, provider, model, ui)
-    _render_banner(ui, state.provider)
-
-    while True:
-        prompt = ui.c("atlas", ui.BOLD + ui.CYAN)
-        prompt += ui.c(f"<{state.provider}>", "blue")
-        prompt += ui.c(f"[{state.graph_path.name if state.loaded_graph else 'no-graph'}]", "dim")
-        prompt += ui.c(" > ", "bold")
-        try:
-            ui.console.print(prompt, end="")
-            raw = input().strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return 0
-        if not dispatch_command(state, raw):
-            return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
-    """Build startup parser for one-command interactive mode."""
-    parser = argparse.ArgumentParser(prog="code-atlas", description="Interactive knowledge graph CLI for AI code exploration.")
+    """Build startup parser for Textual interactive mode."""
+    parser = argparse.ArgumentParser(prog="code-atlas", description="Textual knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     parser.add_argument("--provider", choices=["openai", "anthropic", "google"], default="google", help="LLM provider for ask command")
     parser.add_argument("--model", default=None, help="Optional model override for provider")
-    parser.add_argument("--tui", action="store_true", help="Launch full-screen Textual mode")
     return parser
 
 
 def run(argv: list[str] | None = None) -> int:
     """CLI public entrypoint used by main.py and project scripts."""
     args = build_parser().parse_args(argv)
-    if args.tui:
-        try:
-            from .tui import run_tui
+    from .tui import run_tui
 
-            return run_tui(Path(args.graph).resolve(), args.provider, args.model)
-        except Exception:
-            return run_shell(Path(args.graph).resolve(), args.provider, args.model)
-    return run_shell(Path(args.graph).resolve(), args.provider, args.model)
+    return run_tui(Path(args.graph).resolve(), args.provider, args.model)
