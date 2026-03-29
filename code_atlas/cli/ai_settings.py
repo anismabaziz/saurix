@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Interactive commands for AI provider/model/key configuration."""
+
 import os
 from getpass import getpass
 
@@ -8,6 +10,7 @@ from ..llm.client import DEFAULTS
 
 
 def cmd_set_key(state: ShellState, rest: list[str]) -> None:
+    """Set provider API key for current process session only."""
     if not rest:
         state.ui.warn("Usage: set-key <openai|anthropic|google> [api_key]")
         return
@@ -28,6 +31,7 @@ def cmd_set_key(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_set_provider(state: ShellState, rest: list[str]) -> None:
+    """Switch active provider used by `ask` command."""
     if not rest:
         state.ui.warn("Usage: set-provider <openai|anthropic|google>")
         return
@@ -43,6 +47,7 @@ def cmd_set_provider(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_set_model(state: ShellState, rest: list[str]) -> None:
+    """Set explicit model override, or clear to provider default."""
     if not rest:
         state.model = None
         state.ui.success("Model override cleared; provider default model will be used")
@@ -52,6 +57,7 @@ def cmd_set_model(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_providers(state: ShellState) -> None:
+    """Print supported providers, defaults, and active one."""
     state.ui.header("\nAI Providers")
     for name, conf in DEFAULTS.items():
         active = " (active)" if name == state.provider else ""
@@ -61,6 +67,7 @@ def cmd_providers(state: ShellState) -> None:
 
 
 def cmd_models(state: ShellState, rest: list[str]) -> None:
+    """Print curated static model list for a provider."""
     provider = (rest[0].lower() if rest else state.provider)
     if provider not in DEFAULTS:
         state.ui.warn("Usage: models [openai|anthropic|google]")

@@ -18,6 +18,12 @@ from ..graph import GraphStore
 DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
 
 
+def _render_banner(ui: UI, provider: str) -> None:
+    print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
+    ui.header("Code Atlas Interactive")
+    ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
+
+
 def run_shell(graph_path: Path, provider: str, model: str | None) -> int:
     """Start the REPL, keep shared shell state, and route user commands."""
     ui = UI()
@@ -28,9 +34,7 @@ def run_shell(graph_path: Path, provider: str, model: str | None) -> int:
         provider=provider,
         model=model,
     )
-    print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
-    ui.header("Code Atlas Interactive")
-    ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
+    _render_banner(ui, state.provider)
 
     while True:
         prompt = ui.c("atlas", ui.BOLD + ui.CYAN)
@@ -58,9 +62,7 @@ def run_shell(graph_path: Path, provider: str, model: str | None) -> int:
             print(interactive_help())
         elif cmd == "clear":
             clear_screen()
-            print(ui.c(ASCII_LOGO, ui.CYAN + ui.BOLD))
-            ui.header("Code Atlas Interactive")
-            ui.muted(f"Type 'help' for commands, 'exit' to quit. AI provider: {provider}")
+            _render_banner(ui, state.provider)
         elif cmd == "raw":
             if rest and rest[0] in {"on", "off"}:
                 state.raw_mode = rest[0] == "on"

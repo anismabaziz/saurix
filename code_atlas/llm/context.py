@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Graph-aware context builder for the conversational `ask` command."""
+
 import re
 
 from ..graph import GraphStore
@@ -7,6 +9,7 @@ from ..query import callers_of, find_symbol, impact_of, related_files
 
 
 def build_question_context(graph: GraphStore, question: str) -> dict[str, object]:
+    """Build compact, structured retrieval context from graph primitives."""
     file_hint = _extract_file_hint(question)
     symbol_hint = _extract_symbol_hint(question)
     key = symbol_hint or file_hint or _extract_key_phrase(question)
@@ -34,6 +37,7 @@ def build_question_context(graph: GraphStore, question: str) -> dict[str, object
 
 
 def _extract_key_phrase(question: str) -> str:
+    """Fallback keyword extraction when no file/symbol hint is provided."""
     cleaned = " ".join(question.strip().split())
     if not cleaned:
         return "main"
@@ -44,7 +48,7 @@ def _extract_key_phrase(question: str) -> str:
 
 
 def _extract_file_hint(question: str) -> str | None:
-    # Accept common source-like path tokens from natural questions.
+    """Extract source-like file path token from natural language question."""
     match = re.search(r"([\w\-/]+\.(?:py|ts|tsx|go|java|js|jsx|rs|rb|php|cs))", question)
     if not match:
         return None
@@ -52,7 +56,7 @@ def _extract_file_hint(question: str) -> str | None:
 
 
 def _extract_symbol_hint(question: str) -> str | None:
-    # Accept fully qualified graph symbol ids when user includes them.
+    """Extract explicit graph symbol id if present in question."""
     match = re.search(r"((?:python|typescript|go|java)://[^\s]+)", question)
     if not match:
         return None
@@ -60,6 +64,7 @@ def _extract_symbol_hint(question: str) -> str | None:
 
 
 def _file_context(graph: GraphStore, file_hint: str) -> dict[str, object]:
+    """Collect symbol/neighbor context scoped to one requested file."""
     nodes_for_file = [
         {
             "id": node.id,
@@ -86,6 +91,7 @@ def _file_context(graph: GraphStore, file_hint: str) -> dict[str, object]:
 
 
 def _overview_context(graph: GraphStore) -> dict[str, object]:
+    """Provide lightweight repository overview for broad questions."""
     counts: dict[str, int] = {}
     for node in graph.nodes.values():
         if not node.file:

@@ -20,11 +20,13 @@ EXTRACTOR_VERSIONS = {
 
 
 def file_hash(path: Path) -> str:
+    """Compute content hash used for per-file incremental invalidation."""
     data = path.read_bytes()
     return hashlib.sha256(data).hexdigest()
 
 
 def load_cache(path: Path) -> dict[str, object]:
+    """Load cache safely; return empty cache on mismatch/corruption."""
     if not path.exists():
         return _empty_cache()
     try:
@@ -42,6 +44,7 @@ def load_cache(path: Path) -> dict[str, object]:
 
 
 def save_cache(path: Path, files: dict[str, dict[str, object]]) -> None:
+    """Persist normalized cache payload to disk."""
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "version": CACHE_VERSION,
@@ -52,6 +55,7 @@ def save_cache(path: Path, files: dict[str, dict[str, object]]) -> None:
 
 
 def serialize_contribution(nodes: list[Node], edges: list[Edge], *, lang: str, fingerprint: str, parser_mode: str) -> dict[str, object]:
+    """Serialize one file contribution for cache reuse."""
     return {
         "lang": lang,
         "hash": fingerprint,
@@ -62,6 +66,7 @@ def serialize_contribution(nodes: list[Node], edges: list[Edge], *, lang: str, f
 
 
 def deserialize_contribution(row: dict[str, object]) -> tuple[list[Node], list[Edge]]:
+    """Restore Node/Edge dataclasses from cached contribution row."""
     nodes = [Node(**n) for n in row.get("nodes", []) if isinstance(n, dict)]
     edges = [Edge(**e) for e in row.get("edges", []) if isinstance(e, dict)]
     return nodes, edges

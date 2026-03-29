@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Small provider-agnostic LLM client wrapper used by CLI ask command."""
+
 import json
 import os
 from dataclasses import dataclass
@@ -7,6 +9,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ProviderConfig:
+    """Provider defaults and required API-key env var."""
     provider: str
     model: str
     api_key_env: str
@@ -20,6 +23,8 @@ DEFAULTS = {
 
 
 class LLMClient:
+    """Dispatch text generation requests to selected provider SDK."""
+
     def __init__(self, provider: str, model: str | None = None) -> None:
         if provider not in DEFAULTS:
             raise ValueError(f"Unsupported provider: {provider}")
@@ -29,6 +34,7 @@ class LLMClient:
         self.api_key_env = base.api_key_env
 
     def answer(self, question: str, context: dict[str, object]) -> str:
+        """Generate final answer from question + structured graph context."""
         api_key = os.getenv(self.api_key_env)
         if not api_key:
             raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
@@ -42,6 +48,7 @@ class LLMClient:
         raise RuntimeError(f"Unsupported provider: {self.provider}")
 
     def _answer_openai(self, api_key: str, question: str, context: dict[str, object]) -> str:
+        """Call OpenAI chat-completions API."""
         from openai import OpenAI
 
         client = OpenAI(api_key=api_key)
@@ -56,6 +63,7 @@ class LLMClient:
         return (response.choices[0].message.content or "").strip()
 
     def _answer_anthropic(self, api_key: str, question: str, context: dict[str, object]) -> str:
+        """Call Anthropic messages API."""
         import anthropic
 
         client = anthropic.Anthropic(api_key=api_key)
@@ -69,6 +77,7 @@ class LLMClient:
         return "\n".join(text_parts).strip()
 
     def _answer_google(self, api_key: str, question: str, context: dict[str, object]) -> str:
+        """Call Google GenAI generate_content API."""
         from google import genai
         from google.genai import types
 
