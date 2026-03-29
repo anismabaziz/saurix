@@ -228,7 +228,6 @@ Current snapshot (cold run vs warm incremental run):
 | `pallets/flask` | python | 0.20 | 0.09 | 2.27x | 83 | 0 |
 | `axios/axios` | typescript | 0.09 | 0.05 | 1.87x | 280 | 0 |
 | `google/gson` | java | 0.75 | 0.31 | 2.45x | 259 | 0 |
-- `cache_path`
 
 ---
 
@@ -433,8 +432,3 @@ Add these files and reference them in your portfolio:
 - `docs/assets/visual-workflow.png` - graph UI with filters and path highlight
 - `docs/assets/mcp-workflow.png` - MCP tool-call sequence and outputs
 - `docs/assets/code-atlas-demo.gif` - short end-to-end animated demo
-
-Demo helpers:
-
-- `scripts/demo_runs.py` - generates reproducible CLI/MCP/visual demo outputs
-- `docs/demo-capture.md` - capture instructions for screenshots and GIF
