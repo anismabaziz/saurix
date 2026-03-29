@@ -115,5 +115,5 @@ def add_function(
             target=resolved,
             file=rel,
             line=getattr(child, "lineno", None),
-            confidence=call_confidence(raw_name, resolved),
+            confidence=call_confidence(raw_name, resolved, imports),
         )

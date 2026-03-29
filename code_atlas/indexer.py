@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .extractors import GoExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
+from .extractors import GoExtractor, JavaExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
 from .graph import GraphStore
 from .models import Node
 from .scanner import detect_language, scan_source_files
@@ -37,6 +37,7 @@ def build_graph(repo_root: Path) -> IndexResult:
         "python": PythonExtractor(),
         "typescript": TypeScriptExtractor(),
         "go": GoExtractor(),
+        "java": JavaExtractor(),
     }
     indexed = 0
     files_by_language: dict[str, int] = {}

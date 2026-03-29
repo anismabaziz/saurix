@@ -155,14 +155,17 @@ flowchart LR
     D --> E1[Python Extractor\nextractors/python_extractor.py]
     D --> E2[TypeScript Extractor\nextractors/typescript_extractor.py]
     D --> E3[Go Extractor\nextractors/go_extractor.py]
-    D --> E4[Stub Extractor\nextractors/stub_extractor.py]
+    D --> E4[Java Extractor\nextractors/java_extractor.py]
+    D --> E5[Stub Extractor\nextractors/stub_extractor.py]
     E1 --> F[Resolver\nimports/self/local symbols]
     E2 --> G[TS Nodes + Edges]
     E3 --> H2[Go Nodes + Edges]
-    E4 --> G2[File Nodes]
+    E4 --> J2[Java Nodes + Edges]
+    E5 --> G2[File Nodes]
     F --> H[Graph Store\ngraph.py + models.py]
     G --> H
     H2 --> H
+    J2 --> H
     G2 --> H
     H --> I[Query Engine\nquery.py]
     H --> J[Exporters\nexporters.py]
@@ -261,7 +264,7 @@ export neo4j --out tmp/neo4j
 ## 11) Current limitations
 
 - Deep semantic extraction is strongest for Python right now.
-- TypeScript and Go use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
+- TypeScript, Go, and Java use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
 - Other languages currently use a fallback file-level extractor.
 - Dynamic runtime behavior cannot be perfectly resolved statically.
 
