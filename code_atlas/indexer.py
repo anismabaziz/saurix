@@ -18,10 +18,10 @@ class IndexResult:
         self.indexed_files = indexed_files
 
 
-def build_graph(repo_root: Path) -> IndexResult:
+def build_graph(repo_root: Path, exclude_dirs: set[str] | None = None) -> IndexResult:
     """Build a graph for a repository root and attach extraction metadata."""
     root = repo_root.resolve()
-    files = scan_source_files(root)
+    files = scan_source_files(root, exclude_dirs=exclude_dirs)
     cache_path = (root / DEFAULT_CACHE_PATH).resolve()
     cache = load_cache(cache_path)
     cached_files: dict[str, dict[str, object]] = cache.get("files", {}) if isinstance(cache.get("files"), dict) else {}

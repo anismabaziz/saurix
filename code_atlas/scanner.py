@@ -7,6 +7,7 @@ DEFAULT_EXCLUDE_DIRS = {
     ".git",
     ".hg",
     ".svn",
+    "tmp",
     ".venv",
     "venv",
     "node_modules",

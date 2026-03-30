@@ -3,7 +3,7 @@ from __future__ import annotations
 """Interactive `ask` command wired to graph-grounded LLM answers."""
 
 from .commands import ShellState
-from ..llm import LLMClient, build_question_context
+from ..llm import LLMClient, build_question_context, detect_question_intent
 
 
 def cmd_ask(state: ShellState, rest: list[str], provider: str, model: str | None) -> None:
@@ -17,8 +17,13 @@ def cmd_ask(state: ShellState, rest: list[str], provider: str, model: str | None
         return
 
     try:
-        context = build_question_context(state.loaded_graph, question)
         client = LLMClient(provider=provider, model=model)
+        try:
+            intent = client.classify_intent(question)
+        except Exception:
+            intent = detect_question_intent(question)
+        context = build_question_context(state.loaded_graph, question, intent=intent)
+        state.ui.info(f"Ask intent: {intent}")
         answer = client.answer(question, context)
     except Exception as exc:
         message = str(exc)

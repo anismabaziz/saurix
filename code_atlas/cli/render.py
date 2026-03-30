@@ -70,6 +70,7 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
         "source",
         "resolved",
         "output",
+        "excluded_dirs",
         "scanned_files",
         "indexed_files",
         "nodes",

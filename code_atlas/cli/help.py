@@ -6,7 +6,8 @@ def interactive_help() -> str:
         [
             "Interactive commands:",
             "  help                                        Show this message",
-            "  index <repo-or-github-url> [--out PATH]    Index source to graph JSON",
+            "  index <repo-or-github-url> [--out PATH] [--exclude dir1,dir2]",
+            "                                              Index source to graph JSON",
             "  load [PATH]                                 Load a graph JSON file",
             "  stats                                       Show graph statistics",
             "  find <name> [--limit N]                     Find symbol by fuzzy name",

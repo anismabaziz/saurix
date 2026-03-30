@@ -34,11 +34,12 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: index <repo-or-github-url> [--out PATH]")
         return
     out = Path(rest[rest.index("--out") + 1]).resolve() if "--out" in rest and len(rest) > rest.index("--out") + 1 else state.graph_path
+    excludes = _parse_csv_flag(rest, "--exclude")
     source = rest[0]
     try:
         with prepare_repo_source(source) as (repo_path, source_kind):
             state.ui.info(f"Preparing source: {source_kind}")
-            result = build_graph(repo_path)
+            result = build_graph(repo_path, exclude_dirs=excludes)
             result.graph.write_json(out)
             state.graph_path, state.loaded_graph = out, result.graph
             stats = result.graph.stats()
@@ -55,6 +56,8 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         "nodes": stats.get("nodes", 0) if isinstance(stats, dict) else 0,
         "edges": stats.get("edges", 0) if isinstance(stats, dict) else 0,
     }
+    if excludes:
+        summary["excluded_dirs"] = ", ".join(sorted(excludes))
     inc = stats.get("incremental_cache", {}) if isinstance(stats, dict) else {}
     if isinstance(inc, dict):
         summary["cache_hits"] = inc.get("cache_hits", 0)
@@ -163,3 +166,14 @@ def _parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
         return int(parts[parts.index(flag) + 1])
     except (IndexError, ValueError):
         return None
+
+
+def _parse_csv_flag(parts: list[str], flag: str) -> set[str] | None:
+    if flag not in parts:
+        return None
+    try:
+        raw = parts[parts.index(flag) + 1]
+    except IndexError:
+        return None
+    entries = {chunk.strip() for chunk in raw.split(",") if chunk.strip()}
+    return entries or None

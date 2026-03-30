@@ -114,7 +114,7 @@ sequenceDiagram
 
 ```text
 help
-index <repo-or-github-url> [--out PATH]
+index <repo-or-github-url> [--out PATH] [--exclude dir1,dir2]
 load [PATH]
 stats
 find <name> [--limit N]
