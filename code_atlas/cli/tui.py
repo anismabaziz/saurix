@@ -70,7 +70,7 @@ class AtlasTUI(App[None]):
     def compose(self) -> ComposeResult:
         with Container(id="body"):
             yield RichLog(id="output", highlight=True, markup=True, wrap=True, auto_scroll=False)
-        yield Input(placeholder="Type command (help, index, find, ask, stats, visual, quit)...", id="command")
+        yield Input(placeholder="Type command (help, ai-status, index, find, ask, stats, visual, quit)...", id="command")
         yield Footer()
 
     def on_mount(self) -> None:

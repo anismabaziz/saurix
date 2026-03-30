@@ -22,6 +22,7 @@ def interactive_help() -> str:
             "  set-model [model_name]                      Set/clear model override",
             "  providers                                   Show supported AI providers",
             "  models [provider]                           List available/common models",
+            "  ai-status                                   Show active AI config + key source",
             "  export graphml [--out PATH]                 Export graph to GraphML",
             "  export neo4j [--out DIR]                    Export graph to Neo4j CSV files",
             "  visual <symbol> [--depth N] [--limit N]     Open interactive browser graph",

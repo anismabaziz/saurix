@@ -8,7 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .ask_commands import cmd_ask
-from .ai_settings import cmd_models, cmd_providers, cmd_set_key, cmd_set_model, cmd_set_provider
+from .ai_settings import cmd_ai_status, cmd_models, cmd_providers, cmd_set_key, cmd_set_model, cmd_set_provider
 from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
 from .extra_commands import cmd_export, cmd_visual
 from .help import interactive_help
@@ -90,6 +90,8 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_providers(state)
     elif cmd == "models":
         cmd_models(state, rest)
+    elif cmd == "ai-status":
+        cmd_ai_status(state)
     elif cmd == "export":
         cmd_export(state, rest)
     elif cmd == "visual":

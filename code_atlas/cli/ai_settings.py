@@ -7,7 +7,7 @@ from getpass import getpass
 
 from .commands import ShellState
 from ..llm.client import DEFAULTS
-from ..llm.keychain import save_api_key
+from ..llm.keychain import load_api_key, save_api_key
 
 
 def cmd_set_key(state: ShellState, rest: list[str]) -> None:
@@ -101,3 +101,26 @@ def cmd_models(state: ShellState, rest: list[str]) -> None:
     state.ui.print("- gemini-2.5-flash (default)")
     state.ui.print("- gemini-2.5-pro")
     state.ui.print("- gemini-2.0-flash")
+
+
+def cmd_ai_status(state: ShellState) -> None:
+    """Show active provider/model and API key source without revealing secret."""
+    provider = state.provider
+    conf = DEFAULTS[provider]
+    model = state.model or conf.model
+    env_present = bool(os.getenv(conf.api_key_env))
+    keychain_present = bool(load_api_key(provider))
+
+    state.ui.header("\nAI Status")
+    state.ui.print(f"- provider      : {provider}")
+    state.ui.print(f"- model         : {model}")
+    state.ui.print(f"- key env var   : {conf.api_key_env}")
+    state.ui.print(f"- env key found : {'yes' if env_present else 'no'}")
+    state.ui.print(f"- keychain found: {'yes' if keychain_present else 'no'}")
+
+    if env_present:
+        state.ui.success("Using API key from environment variable")
+    elif keychain_present:
+        state.ui.success("Using API key from keychain")
+    else:
+        state.ui.warn("No API key found. Use: set-key <provider> <api_key>")

@@ -128,6 +128,7 @@ set-provider <openai|anthropic|google>
 set-model [model_name]
 providers
 models [provider]
+ai-status
 export graphml [--out PATH]
 export neo4j [--out DIR]
 visual <symbol> [--depth N] [--limit N] [--out PATH]
