@@ -6,6 +6,8 @@ import json
 import os
 from dataclasses import dataclass
 
+from .keychain import load_api_key
+
 
 @dataclass
 class ProviderConfig:
@@ -35,7 +37,7 @@ class LLMClient:
 
     def answer(self, question: str, context: dict[str, object]) -> str:
         """Generate final answer from question + structured graph context."""
-        api_key = os.getenv(self.api_key_env)
+        api_key = os.getenv(self.api_key_env) or load_api_key(self.provider)
         if not api_key:
             raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
 
@@ -49,7 +51,7 @@ class LLMClient:
 
     def classify_intent(self, question: str) -> str:
         """Classify ask intent as overview or graph using provider model."""
-        api_key = os.getenv(self.api_key_env)
+        api_key = os.getenv(self.api_key_env) or load_api_key(self.provider)
         if not api_key:
             raise RuntimeError(f"Missing API key env var: {self.api_key_env}")
 

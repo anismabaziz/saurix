@@ -7,10 +7,11 @@ from getpass import getpass
 
 from .commands import ShellState
 from ..llm.client import DEFAULTS
+from ..llm.keychain import save_api_key
 
 
 def cmd_set_key(state: ShellState, rest: list[str]) -> None:
-    """Set provider API key for current process session only."""
+    """Set provider API key for session and save in keychain when available."""
     if not rest:
         state.ui.warn("Usage: set-key <openai|anthropic|google> [api_key]")
         return
@@ -33,7 +34,11 @@ def cmd_set_key(state: ShellState, rest: list[str]) -> None:
         return
 
     os.environ[conf.api_key_env] = key.strip()
-    state.ui.success(f"Set {conf.api_key_env} for this session")
+    if save_api_key(provider, key.strip()):
+        state.ui.success(f"Set {conf.api_key_env} for this session and saved in keychain")
+    else:
+        state.ui.success(f"Set {conf.api_key_env} for this session")
+        state.ui.muted("Tip: install 'keyring' package to persist keys securely")
 
 
 def cmd_set_provider(state: ShellState, rest: list[str]) -> None:
