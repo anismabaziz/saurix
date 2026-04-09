@@ -3,6 +3,7 @@ from __future__ import annotations
 """Index orchestration: scan files, dispatch extractors, and compute coverage."""
 
 from pathlib import Path
+from collections.abc import Callable
 
 from .cache import DEFAULT_CACHE_PATH, deserialize_contribution, file_hash, load_cache, save_cache, serialize_contribution
 from .extractors import GoExtractor, JavaExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
@@ -18,7 +19,11 @@ class IndexResult:
         self.indexed_files = indexed_files
 
 
-def build_graph(repo_root: Path, exclude_dirs: set[str] | None = None) -> IndexResult:
+def build_graph(
+    repo_root: Path,
+    exclude_dirs: set[str] | None = None,
+    on_file_indexed: Callable[[int, int, str], None] | None = None,
+) -> IndexResult:
     """Build a graph for a repository root and attach extraction metadata."""
     root = repo_root.resolve()
     files = scan_source_files(root, exclude_dirs=exclude_dirs)
@@ -54,6 +59,9 @@ def build_graph(repo_root: Path, exclude_dirs: set[str] | None = None) -> IndexR
 
     current_rel_paths = set()
 
+    total_files = len(files)
+    completed_files = 0
+
     for file_path in files:
         lang = detect_language(file_path)
         if lang is None:
@@ -80,6 +88,9 @@ def build_graph(repo_root: Path, exclude_dirs: set[str] | None = None) -> IndexR
             indexed += 1
             indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
             parser_mode_by_language[lang] = parser_mode
+            completed_files += 1
+            if on_file_indexed is not None:
+                on_file_indexed(completed_files, total_files, rel)
             continue
 
         changed_files += 1
@@ -118,6 +129,10 @@ def build_graph(repo_root: Path, exclude_dirs: set[str] | None = None) -> IndexR
             indexed += 1
             indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
             parser_mode_by_language[lang] = "stub"
+
+        completed_files += 1
+        if on_file_indexed is not None:
+            on_file_indexed(completed_files, total_files, rel)
 
     coverage: dict[str, dict[str, object]] = {}
     for lang, total in sorted(files_by_language.items()):

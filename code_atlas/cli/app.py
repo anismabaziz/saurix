@@ -1,31 +1,27 @@
 from __future__ import annotations
 
-"""Textual app entrypoint and command dispatch."""
+"""Interactive CLI entrypoint and command dispatch."""
 
 import argparse
 import shlex
 from collections.abc import Callable
 from pathlib import Path
 
-from .ask_commands import cmd_ask
-from .ai_settings import cmd_ai_status, cmd_models, cmd_providers, cmd_set_key, cmd_set_model, cmd_set_provider
 from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
-from .extra_commands import cmd_export, cmd_visual
+from .extra_commands import cmd_export, cmd_visual, cmd_visual_all
 from .help import interactive_help
-from .ui import UI, clear_screen
+from .ui import ASCII_LOGO, UI, clear_screen
 from ..graph import GraphStore
 
 
 DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
 
 
-def create_state(graph_path: Path, provider: str, model: str | None, ui: UI) -> ShellState:
+def create_state(graph_path: Path, ui: UI) -> ShellState:
     return ShellState(
         ui=ui,
         graph_path=graph_path,
         loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None,
-        provider=provider,
-        model=model,
     )
 
 
@@ -52,7 +48,7 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
             on_clear()
         else:
             clear_screen()
-            _render_banner(ui, state.provider)
+            _render_banner(ui)
     elif cmd == "raw":
         if rest and rest[0] in {"on", "off"}:
             state.raw_mode = rest[0] == "on"
@@ -77,42 +73,46 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_path(state, rest)
     elif cmd == "impact":
         cmd_impact(state, rest)
-    elif cmd == "ask":
-        cmd_ask(state, rest, provider=state.provider, model=state.model)
-    elif cmd == "set-key":
-        cmd_set_key(state, rest)
-    elif cmd == "set-provider":
-        cmd_set_provider(state, rest)
-        ui.muted(f"Active AI provider: {state.provider}")
-    elif cmd == "set-model":
-        cmd_set_model(state, rest)
-    elif cmd == "providers":
-        cmd_providers(state)
-    elif cmd == "models":
-        cmd_models(state, rest)
-    elif cmd == "ai-status":
-        cmd_ai_status(state)
     elif cmd == "export":
         cmd_export(state, rest)
     elif cmd == "visual":
         cmd_visual(state, rest)
+    elif cmd == "visual-all":
+        cmd_visual_all(state, rest)
     else:
         ui.warn("Unknown command. Type 'help' for usage.")
     return True
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build startup parser for Textual interactive mode."""
-    parser = argparse.ArgumentParser(prog="code-atlas", description="Textual knowledge graph CLI for AI code exploration.")
+    """Build startup parser for interactive terminal mode."""
+    parser = argparse.ArgumentParser(prog="code-atlas", description="Knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
-    parser.add_argument("--provider", choices=["openai", "anthropic", "google"], default="google", help="LLM provider for ask command")
-    parser.add_argument("--model", default=None, help="Optional model override for provider")
     return parser
 
 
 def run(argv: list[str] | None = None) -> int:
     """CLI public entrypoint used by main.py and project scripts."""
     args = build_parser().parse_args(argv)
-    from .tui import run_tui
+    ui = UI()
+    graph_path = Path(args.graph).resolve()
+    state = create_state(graph_path, ui)
+    _render_banner(ui)
 
-    return run_tui(Path(args.graph).resolve(), args.provider, args.model)
+    while True:
+        graph_name = state.graph_path.name if state.loaded_graph else "no-graph"
+        try:
+            raw = ui.console.input(ui.prompt(graph_name))
+        except (EOFError, KeyboardInterrupt):
+            ui.print()
+            ui.success("Goodbye.")
+            return 0
+
+        if not dispatch_command(state, raw):
+            return 0
+
+
+def _render_banner(ui: UI) -> None:
+    ui.print(f"[bold cyan]{ASCII_LOGO}[/]")
+    ui.header("Code Atlas Interactive")
+    ui.muted("Type 'help' to list commands.")

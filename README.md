@@ -1,6 +1,6 @@
 # Code Atlas
 
-![Code Atlas Textual TUI](docs/assets/tui-preview.png)
+![Code Atlas CLI](docs/assets/tui-preview.png)
 
 Code Atlas turns a repo into a **knowledge graph** so humans and AI agents can explore code structure fast.
 
@@ -27,7 +27,7 @@ Think of it as:
 
 - **Scanner** finds code files.
 - **Extractors** read syntax and relationships.
-- **Graph Store** saves structure.
+- **Graph Store** saves structure and maintains fast lookup indexes.
 - **Query Engine** answers navigation/debug questions.
 
 ---
@@ -40,6 +40,12 @@ Install dependencies first:
 uv sync
 ```
 
+Run tests (project test suite only):
+
+```bash
+uv run pytest tests
+```
+
 Install command-line entry points in your current environment:
 
 ```bash
@@ -50,23 +56,6 @@ Then run as a normal command-line app:
 
 ```bash
 code-atlas
-```
-
-Ask mode supports provider selection:
-
-```bash
-code-atlas --provider openai
-code-atlas --provider anthropic
-code-atlas --provider google
-```
-
-Google default model: `gemini-2.5-flash`
-Default provider: `google`
-
-Optional model override:
-
-```bash
-code-atlas --provider openai --model gpt-4o-mini
 ```
 
 Start the interactive CLI:
@@ -122,48 +111,14 @@ callers <symbol> [--limit N]
 related <file> [--depth N] [--limit N]
 path <from> <to> [--max-depth N]
 impact <symbol> [--depth N] [--limit N]
-ask <question>
-set-key <openai|anthropic|google> [api_key]
-set-provider <openai|anthropic|google>
-set-model [model_name]
-providers
-models [provider]
-ai-status
 export graphml [--out PATH]
 export neo4j [--out DIR]
 visual <symbol> [--depth N] [--limit N] [--out PATH]
+visual-all [--limit N] [--out PATH]
 raw on|off
 where
 clear
 exit
-```
-
-### Built-in AI assistant
-
-The `ask` command uses graph-derived context (symbol matches, callers, impact) and sends only that structured context to an LLM.
-Model selection is static by default (no live auto-switching).
-
-Supported providers and API keys:
-
-- OpenAI: `OPENAI_API_KEY`
-- Anthropic: `ANTHROPIC_API_KEY`
-- Google: `GOOGLE_API_KEY`
-
-You can set keys directly inside the CLI for the current session:
-
-```text
-providers
-models google
-set-key openai
-set-provider openai
-set-model gpt-4o-mini
-ask summarize the auth module impact
-```
-
-Example:
-
-```text
-ask what breaks if i change find_symbol
 ```
 
 ### Stats quality reporting
@@ -176,6 +131,10 @@ ask what breaks if i change find_symbol
   - files indexed
   - coverage percentage
   - parser mode (`ast`, `tree-sitter`, `regex-fallback`, `stub`)
+
+`index` also prints clear progress checkpoints (prepare source, scan files, write graph) to make longer indexing runs easier to track.
+
+Index progress is shown live on a single terminal line while indexing runs.
 
 ```mermaid
 flowchart LR
@@ -329,9 +288,11 @@ flowchart LR
 ```mermaid
 flowchart LR
     A[Graph Store] --> B[visual <symbol>]
+    A --> B2[visual-all]
     A --> C[export graphml]
     A --> D[export neo4j]
     B --> E[Interactive HTML in browser]
+    B2 --> E
     C --> F[Gephi / graph tools]
     D --> G[Neo4j import]
 ```
@@ -340,6 +301,7 @@ Default artifact locations (under git-ignored `tmp/`):
 
 - `tmp/code-atlas.graph.json`
 - `tmp/graph-view.html`
+- `tmp/graph-view-all.html`
 - `tmp/code-atlas.graphml`
 - `tmp/neo4j/nodes.csv`
 - `tmp/neo4j/edges.csv`
@@ -348,11 +310,14 @@ Default artifact locations (under git-ignored `tmp/`):
 
 The browser graph now includes:
 
+- robust graph rendering with automatic 3D/2D fallback depending on dataset size/browser support
 - search by node name/id
 - edge-type filters (`CALLS`, `IMPORTS`, `CONTAINS`, `INHERITS`)
 - confidence-colored edges
+- path highlight between two nodes (directed or undirected)
 - interactive node details panel
-- zoom/pan/drag with `Fit`, `Pause/Resume`, and `Reset` controls
+- camera navigation + `Fit`, `Pause/Resume`, and `Reset` controls
+- full-graph mode via `visual-all` with a default node cap (`800`) for browser performance
 
 ---
 
@@ -375,7 +340,8 @@ export neo4j --out tmp/neo4j
 ## 11) Current limitations
 
 - Deep semantic extraction is strongest for Python right now.
-- TypeScript, Go, and Java use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
+- TypeScript extraction now handles richer symbols (classes, interfaces, methods/properties), more import styles (default/named/namespace/side-effect), and improved call resolution; dynamic patterns are still best-effort.
+- Go and Java use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
 - Other languages currently use a fallback file-level extractor.
 - Dynamic runtime behavior cannot be perfectly resolved statically.
 
@@ -421,6 +387,24 @@ Tool responses follow a structured shape:
   "meta": { "duration_ms": 12 }
 }
 ```
+
+Errors follow the same envelope with structured codes/messages:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "GRAPH_NOT_FOUND",
+    "message": "Graph file not found: ..."
+  }
+}
+```
+
+Common MCP error codes:
+
+- `SOURCE_NOT_FOUND`, `INVALID_SOURCE`, `PERMISSION_DENIED`
+- `GRAPH_NOT_FOUND`, `INVALID_GRAPH`
+- `INDEX_FAILED`, `STATS_FAILED`, `FIND_FAILED`, `CALLERS_FAILED`, `PATH_FAILED`, `IMPACT_FAILED`, `RELATED_FAILED`
 
 Client setup and examples:
 

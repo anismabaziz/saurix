@@ -19,8 +19,6 @@ class ShellState:
     graph_path: Path
     loaded_graph: GraphStore | None
     raw_mode: bool = False
-    provider: str = "google"
-    model: str | None = None
 
 
 def cmd_where(state: ShellState) -> None:
@@ -39,18 +37,39 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
     try:
         with prepare_repo_source(source) as (repo_path, source_kind):
             state.ui.info(f"Preparing source: {source_kind}")
-            result = build_graph(repo_path, exclude_dirs=excludes)
+            if source_kind == "github":
+                state.ui.info(f"Cloned to: {repo_path}")
+
+            state.ui.info("Scanning files...")
+            state.ui.progress_line_start("Indexing files...")
+
+            def on_file_indexed(done: int, total: int, rel: str) -> None:
+                short_rel = rel if len(rel) <= 70 else f"...{rel[-67:]}"
+                state.ui.progress_line_update(done, total, short_rel)
+
+            result = build_graph(repo_path, exclude_dirs=excludes, on_file_indexed=on_file_indexed)
+            if result.scanned_files == 0:
+                state.ui.progress_line_finish("Indexing files... 0/0 (100%)")
+                state.ui.warn("No source files found")
+            else:
+                state.ui.progress_line_finish()
+
+            state.ui.info("Writing graph...")
             result.graph.write_json(out)
             state.graph_path, state.loaded_graph = out, result.graph
             stats = result.graph.stats()
     except (ValueError, RuntimeError) as exc:
         state.ui.error(f"Index failed: {exc}")
         return
+    except Exception as exc:
+        state.ui.error(f"Unexpected error during indexing: {exc}")
+        return
+
     state.ui.success("Index completed")
     summary: dict[str, object] = {
         "source": source,
-        "resolved": repo_path,
-        "output": state.graph_path,
+        "resolved": str(repo_path),
+        "output": str(state.graph_path),
         "scanned_files": result.scanned_files,
         "indexed_files": result.indexed_files,
         "nodes": stats.get("nodes", 0) if isinstance(stats, dict) else 0,

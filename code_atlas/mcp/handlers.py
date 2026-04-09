@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """MCP tool business logic built on top of Code Atlas core services."""
 
+import json
 from pathlib import Path
 from time import perf_counter
 
@@ -11,6 +12,14 @@ from ..query import callers_of, find_symbol, impact_of, related_files, shortest_
 from ..repo_source import prepare_repo_source
 from .schemas import ToolError, ToolResult
 from .utils import clamp_depth, clamp_limit, normalize_graph_path
+
+
+def _format_error(exc: Exception, context: str = "") -> str:
+    """Format exception with context for user-friendly error messages."""
+    msg = f"{type(exc).__name__}: {exc}"
+    if context:
+        msg = f"{context}: {msg}"
+    return msg
 
 
 def index_repo(source: str, out: str | None = None) -> dict:
@@ -34,8 +43,26 @@ def index_repo(source: str, out: str | None = None) -> dict:
             },
             meta={"duration_ms": int((perf_counter() - t0) * 1000)},
         ).to_dict()
+    except FileNotFoundError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="SOURCE_NOT_FOUND", message=f"Source path not found: {exc}"),
+        ).to_dict()
+    except PermissionError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="PERMISSION_DENIED", message=f"Permission denied accessing source: {exc}"),
+        ).to_dict()
+    except ValueError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_SOURCE", message=f"Invalid source specification: {exc}"),
+        ).to_dict()
     except Exception as exc:
-        return ToolResult(ok=False, error=ToolError(code="INDEX_FAILED", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INDEX_FAILED", message=_format_error(exc, "Indexing failed")),
+        ).to_dict()
 
 
 def stats(graph: str | None = None) -> dict:
@@ -45,7 +72,25 @@ def stats(graph: str | None = None) -> dict:
         g = GraphStore.from_json(normalize_graph_path(graph))
         return ToolResult(ok=True, data=g.stats(), meta={"duration_ms": int((perf_counter() - t0) * 1000)}).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except PermissionError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="PERMISSION_DENIED", message=f"Permission denied reading graph: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="STATS_FAILED", message=_format_error(exc, "Failed to compute stats")),
+        ).to_dict()
 
 
 def find(graph: str | None, query: str, limit: int | None = None) -> dict:
@@ -60,7 +105,20 @@ def find(graph: str | None, query: str, limit: int | None = None) -> dict:
             meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
         ).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="FIND_FAILED", message=_format_error(exc, "Symbol lookup failed")),
+        ).to_dict()
 
 
 def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
@@ -75,7 +133,20 @@ def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
             meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
         ).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="CALLERS_FAILED", message=_format_error(exc, "Failed to find callers")),
+        ).to_dict()
 
 
 def path_between(graph: str | None, source: str, target: str, max_depth: int | None = None) -> dict:
@@ -90,7 +161,20 @@ def path_between(graph: str | None, source: str, target: str, max_depth: int | N
             meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
         ).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="PATH_FAILED", message=_format_error(exc, "Path computation failed")),
+        ).to_dict()
 
 
 def impact(graph: str | None, symbol: str, depth: int | None = None, limit: int | None = None) -> dict:
@@ -105,7 +189,20 @@ def impact(graph: str | None, symbol: str, depth: int | None = None, limit: int 
             meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
         ).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="IMPACT_FAILED", message=_format_error(exc, "Impact analysis failed")),
+        ).to_dict()
 
 
 def related(graph: str | None, file: str, depth: int | None = None, limit: int | None = None) -> dict:
@@ -120,4 +217,17 @@ def related(graph: str | None, file: str, depth: int | None = None, limit: int |
             meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
         ).to_dict()
     except FileNotFoundError as exc:
-        return ToolResult(ok=False, error=ToolError(code="GRAPH_NOT_FOUND", message=str(exc))).to_dict()
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="GRAPH_NOT_FOUND", message=f"Graph file not found: {exc}"),
+        ).to_dict()
+    except json.JSONDecodeError as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="INVALID_GRAPH", message=f"Graph file contains invalid JSON: {exc}"),
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="RELATED_FAILED", message=_format_error(exc, "Related files lookup failed")),
+        ).to_dict()
