@@ -192,7 +192,7 @@ def cmd_init(state: ShellState) -> None:
     # 1. Index current directory
     cwd = Path.cwd()
     ui.info(f"Indexing: {cwd}")
-    cmd_index(state, ["."])
+    cmd_index(state, [".", "--out", "code-atlas.graph.json"])
     
     if not state.loaded_graph:
         ui.error("Indexing failed. Cannot proceed with initialization.")
@@ -206,19 +206,39 @@ def cmd_init(state: ShellState) -> None:
     # 3. Provide MCP Config
     ui.success("Initialization complete!")
     ui.print()
-    ui.header("MCP Configuration")
-    ui.print("Add this to your `claude_desktop_config.json` or `~/.cursor/mcp.json`:")
-    ui.print()
+    ui.header("Step 3: MCP Integration")
+    ui.info("Add the following to your MCP client config:")
     
-    mcp_config = {
-        "code-atlas": {
-            "command": "uv",
-            "args": ["run", "code-atlas-mcp"],
-            "cwd": str(cwd)
+    # 1. Claude/Global Format
+    ui.muted("\nFor Claude Desktop / Global MCP:")
+    claude_config = {
+        "mcpServers": {
+            "code-atlas": {
+                "command": "uv",
+                "args": ["--directory", str(cwd), "run", "code-atlas-mcp"],
+            }
         }
     }
-    import json
-    ui.print(f"[bold green]{json.dumps(mcp_config, indent=2)}[/]")
+    print_json(claude_config, ui)
+
+    # 2. OpenCode Format
+    ui.muted("\nFor OpenCode (~/.opencode/config.json):")
+    opencode_config = {
+        "mcp": {
+            "code-atlas": {
+                "type": "local",
+                "command": ["uv", "--directory", str(cwd), "run", "code-atlas-mcp"],
+                "enabled": True
+            }
+        }
+    }
+    print_json(opencode_config, ui)
+
+    # 3. Cursor instructions
+    ui.muted("\nFor Cursor (Settings -> Models -> MCP):")
+    ui.print(f"  Name: code-atlas")
+    ui.print(f"  Type: command")
+    ui.print(f"  Command: uv --directory {cwd} run code-atlas-mcp")
     ui.print()
     ui.info(f"Open [bold]{report_path}[/] in your browser to see the 3D map.")
 

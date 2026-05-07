@@ -36,3 +36,8 @@ htmlcov/
 
 # Generated artifacts
 tmp/
+
+
+# Other
+code-atlas.graph.json
+atlas.html
