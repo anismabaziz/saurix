@@ -1,10 +1,8 @@
 # Code Atlas
 
-
-
 Code Atlas is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
 
-## 🚀 Why Code Atlas for AI Agents?
+## Why Code Atlas for AI Agents?
 
 Code Atlas solves the "Context Window" problem for LLMs by providing a structured representation of code that is superior to keyword search:
 
@@ -100,16 +98,16 @@ code-atlas-mcp
 
 ## 4) Interactive Commands
 
-| Command | Description |
-| --- | --- |
-| `index <source>` | Index a local path or GitHub URL |
-| `stats` | Show graph statistics and extraction coverage |
-| `find <query>` | Fuzzy search symbols by name or ID |
-| `callers <sym>` | List symbols calling the target |
-| `path <A> <B>` | Find shortest directed path between two symbols |
-| `impact <sym>` | Estimate blast radius of a change |
-| `visual` | Generate a hybrid 2D/3D knowledge graph visualization |
-| `export` | Export to GraphML or Neo4j CSV |
+| Command          | Description                                           |
+| ---------------- | ----------------------------------------------------- |
+| `index <source>` | Index a local path or GitHub URL                      |
+| `stats`          | Show graph statistics and extraction coverage         |
+| `find <query>`   | Fuzzy search symbols by name or ID                    |
+| `callers <sym>`  | List symbols calling the target                       |
+| `path <A> <B>`   | Find shortest directed path between two symbols       |
+| `impact <sym>`   | Estimate blast radius of a change                     |
+| `visual`         | Generate a hybrid 2D/3D knowledge graph visualization |
+| `export`         | Export to GraphML or Neo4j CSV                        |
 
 ---
 
@@ -152,4 +150,4 @@ For full setup guides (Claude Desktop, Cursor), see [docs/mcp-configs.md](docs/m
 
 ---
 
-*Code Atlas is built for the era of autonomous coding.*
+_Code Atlas is built for the era of autonomous coding._
