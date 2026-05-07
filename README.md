@@ -150,7 +150,7 @@ You can test the MCP integration without a full IDE using the **MCP Inspector**:
 2. **Run the Server**: `npx @modelcontextprotocol/inspector uv run code-atlas-mcp`
 3. **Interact**: Open `http://localhost:5173`, click **Connect**, and use the **Call Tool** tab.
 
-For full setup guides (Claude Desktop, Cursor), see [docs/mcp-configs.md](docs/mcp-configs.md).
+For step-by-step setup (Claude Desktop, Cursor, OpenCode), simply run `code-atlas init` in your project folder.
 
 ### Roadmap
 
