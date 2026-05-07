@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-"""Index orchestration: scan files, dispatch extractors, and compute coverage."""
+"""
+Indexing Orchestration Module
+
+This module is the heart of Code Atlas's indexing engine. It defines the RepositoryIndexer
+class, which manages the lifecycle of repository scanning, file language detection,
+incremental caching, and dispatching work to language-specific extractors.
+"""
 
 import logging
 from pathlib import Path
@@ -16,6 +22,7 @@ from ..infra.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Map file extensions to language identifiers used for extractor dispatch
 LANGUAGE_BY_EXTENSION = {
     ".py": "python",
     ".js": "javascript",
@@ -41,10 +48,12 @@ LANGUAGE_BY_EXTENSION = {
 
 
 def detect_language(path: Path) -> str | None:
+    """Returns the normalized language name based on the file extension."""
     return LANGUAGE_BY_EXTENSION.get(path.suffix.lower())
 
 
 class IndexResult:
+    """Container for the results of an indexing operation."""
     def __init__(self, graph: GraphStore, scanned_files: int, indexed_files: int) -> None:
         self.graph = graph
         self.scanned_files = scanned_files
@@ -52,6 +61,16 @@ class IndexResult:
 
 
 class RepositoryIndexer:
+    """
+    Orchestrates the process of turning a local directory into a GraphStore.
+    
+    Responsibilities:
+    - Recursively scanning the repository root for source files.
+    - Filtering files based on exclusion lists (e.g., .git, node_modules).
+    - Managing the incremental cache to skip re-indexing unchanged files.
+    - Mapping files to appropriate Extractor implementations.
+    - Merging partial graphs from individual files into the global GraphStore.
+    """
     def __init__(
         self,
         repo_root: Path,
@@ -62,6 +81,7 @@ class RepositoryIndexer:
         self.exclude_dirs = exclude_dirs or config.exclude_dirs
         self.on_progress = on_progress
         self.graph = GraphStore()
+        # Pre-initialize heavy-weight extractors
         self.extractors = {
             "python": PythonExtractor(),
             "typescript": TypeScriptExtractor(),
@@ -70,26 +90,39 @@ class RepositoryIndexer:
         }
 
     def _scan_files(self) -> list[Path]:
+        """Collects all indexable files while respecting exclusion rules."""
         files: list[Path] = []
         for path in self.root.rglob("*"):
             if not path.is_file():
                 continue
             rel = path.relative_to(self.root)
+            # Skip files in excluded directories
             if any(part in self.exclude_dirs for part in rel.parts):
                 continue
+            # Only index files with recognized extensions
             if detect_language(path) is None:
                 continue
             files.append(path)
         return sorted(files)
 
     def index(self) -> IndexResult:
-        """Execute the indexing pipeline."""
+        """
+        Executes the indexing pipeline.
+        
+        1. Scan files and compute fingerprints.
+        2. Load incremental cache.
+        3. Iterate through files:
+           - If hash matches cache, deserialize cached nodes/edges.
+           - Otherwise, run language extractor and update cache.
+        4. Aggregate statistics and coverage metadata.
+        5. Persist the updated cache.
+        """
         files = self._scan_files()
         cache_path = (self.root / DEFAULT_CACHE_PATH).resolve()
         cache = load_cache(cache_path)
         cached_files: dict[str, dict[str, Any]] = cache.get("files", {}) if isinstance(cache.get("files"), dict) else {}
 
-        # Add root node
+        # Initialize the graph with a root repository node
         self.graph.add_node(
             Node(
                 id=f"repo://{self.root.name}",
@@ -122,7 +155,7 @@ class RepositoryIndexer:
             extractor = self.extractors.get(lang)
             parser_mode = "stub"
             if extractor is not None:
-                # Determine parser mode for metadata
+                # Identify which parsing strategy is actually being used
                 parser_mode = "ast" if lang == "python" else (
                     "tree-sitter" if getattr(extractor, "_parser", None) else "regex-fallback"
                 )
@@ -130,7 +163,7 @@ class RepositoryIndexer:
             cached = cached_files.get(rel)
             fingerprint = file_hash(file_path)
 
-            # Try cache hit
+            # Check for cache hit: content hash, language, and parser strategy must match
             if (isinstance(cached, dict) and 
                 cached.get("hash") == fingerprint and 
                 cached.get("lang") == lang and 
@@ -151,17 +184,19 @@ class RepositoryIndexer:
                     self.on_progress(i + 1, total_files, rel)
                 continue
 
-            # Cache miss or change
+            # Cache miss: we need to run the full extraction for this file
             changed_files += 1
             if extractor is not None:
                 temp_graph = GraphStore()
                 try:
                     extractor.extract(repo_root=self.root, file_path=file_path, graph=temp_graph)
+                    # Merge temp graph into main graph
                     for node in temp_graph.nodes.values():
                         self.graph.add_node(node)
                     for edge in temp_graph.edges:
                         self.graph.add_edge(edge)
 
+                    # Update cache entry for this file
                     next_cache_files[rel] = serialize_contribution(
                         list(temp_graph.nodes.values()),
                         list(temp_graph.edges),
@@ -175,7 +210,7 @@ class RepositoryIndexer:
                 except Exception as e:
                     logger.error(f"Failed to extract {rel}: {e}")
             else:
-                # Fallback to stub
+                # Use a lightweight fallback for languages without dedicated extractors
                 StubExtractor(lang).extract(repo_root=self.root, file_path=file_path, graph=self.graph)
                 nodes = [n for n in self.graph.nodes.values() if n.file == rel]
                 edges = [e for e in self.graph.edges if e.file == rel]
@@ -189,7 +224,7 @@ class RepositoryIndexer:
             if self.on_progress:
                 self.on_progress(i + 1, total_files, rel)
 
-        # Finalize metadata
+        # Record metrics for the stats panel
         coverage: dict[str, dict[str, Any]] = {}
         for lang, total in sorted(files_by_language.items()):
             indexed_count = indexed_by_language.get(lang, 0)
@@ -223,6 +258,6 @@ def build_graph(
     exclude_dirs: set[str] | None = None,
     on_file_indexed: Callable[[int, int, str], None] | None = None,
 ) -> IndexResult:
-    """Legacy wrapper for build_graph to maintain compatibility."""
+    """Legacy entrypoint for starting a full repository index."""
     indexer = RepositoryIndexer(repo_root, exclude_dirs, on_file_indexed)
     return indexer.index()

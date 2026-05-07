@@ -97,7 +97,7 @@ code-atlas-mcp
 | `callers <sym>` | List symbols calling the target |
 | `path <A> <B>` | Find shortest directed path between two symbols |
 | `impact <sym>` | Estimate blast radius of a change |
-| `visual` | Generate a lightweight D3.js visualization |
+| `visual` | Generate an immersive 3D graph visualization (Three.js) |
 | `export` | Export to GraphML or Neo4j CSV |
 
 ---

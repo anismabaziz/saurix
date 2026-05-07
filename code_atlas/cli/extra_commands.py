@@ -16,7 +16,7 @@ def cmd_visual(state: ShellState, rest: list[str]) -> None:
         return
     
     out = _parse_path_flag(rest, "--out", Path("tmp") / "viz.html")
-    limit = _parse_int_flag(rest, "--limit", 2000)
+    limit = _parse_int_flag(rest, "--limit", 5000)
     
     try:
         viz_path = generate_visualization(state.loaded_graph, out, limit=limit)
