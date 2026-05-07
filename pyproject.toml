@@ -3,6 +3,17 @@ name = "code-atlas"
 version = "0.1.0"
 description = "Interactive CLI that indexes polyglot repositories into a queryable knowledge graph for AI agents"
 readme = "README.md"
+authors = [
+    { name = "Anis B", email = "anismabaziz@gmail.com" }
+]
+keywords = ["mcp", "knowledge-graph", "static-analysis", "ai-agents", "architecture"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 requires-python = ">=3.12"
 dependencies = [
     "mcp>=1.1.3",
@@ -10,6 +21,11 @@ dependencies = [
     "tree-sitter>=0.21,<0.22",
     "tree-sitter-languages>=1.10.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/anismabaziz/code-atlas"
+Repository = "https://github.com/anismabaziz/code-atlas"
+Issues = "https://github.com/anismabaziz/code-atlas/issues"
 
 [project.scripts]
 code-atlas = "code_atlas.cli:run"
