@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from code_atlas.extractors.python_extractor import PythonExtractor
-from code_atlas.graph import GraphStore
+from code_atlas.analysis.python_extractor import PythonExtractor
+from code_atlas.core.graph import GraphStore
 
 
 class TestPythonExtractorBasics:

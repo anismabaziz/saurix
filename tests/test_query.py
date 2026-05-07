@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import pytest
 
-from code_atlas.graph import GraphStore
-from code_atlas.models import Edge, Node
-from code_atlas.query import find_symbol, callers_of, impact_of, related_files
-from code_atlas.query.traversal import resolve_symbol_ids, shortest_path
+from code_atlas.core.graph import GraphStore
+from code_atlas.core.models import Edge, Node
+from code_atlas.discovery.basic import find_symbol, callers_of, related_files
+from code_atlas.discovery.traversal import impact_of, resolve_symbol_ids, shortest_path
 
 
 class TestFindSymbol:

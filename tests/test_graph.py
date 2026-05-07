@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from code_atlas.graph import GraphStore
-from code_atlas.models import Edge, Node
+from code_atlas.core.graph import GraphStore
+from code_atlas.core.models import Edge, Node
 
 
 class TestGraphStoreBasics:

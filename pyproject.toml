@@ -27,3 +27,7 @@ dev = [
 
 [tool.uv]
 package = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tmp", "docs", "scripts", ".venv", ".git"]
