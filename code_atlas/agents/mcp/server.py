@@ -33,8 +33,13 @@ def create_server():
 
     @app.tool()
     def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
-        """List CALLS reverse edges for a symbol."""
+        """List CALLS reverse edges for a symbol (who calls it)."""
         return handlers.callers(graph=graph, symbol=symbol, limit=limit)
+
+    @app.tool()
+    def callees(graph: str | None, symbol: str, limit: int | None = None) -> dict:
+        """List CALLS outgoing edges for a symbol (functions it calls)."""
+        return handlers.callees(graph=graph, symbol=symbol, limit=limit)
 
     @app.tool()
     def path_between(

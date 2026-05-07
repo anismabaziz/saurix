@@ -41,6 +41,31 @@ def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     return rows[:limit]
 
 
+def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
+    """List CALLS edges outgoing from a symbol."""
+    target_ids = {symbol}
+    for node in graph.nodes.values():
+        if node.name == symbol:
+            target_ids.add(node.id)
+
+    rows: list[dict[str, str]] = []
+    for edge in graph.edges:
+        if edge.type != "CALLS" or edge.source not in target_ids:
+            continue
+        target = graph.nodes.get(edge.target)
+        rows.append(
+            {
+                "callee": edge.target,
+                "callee_name": target.name if target else edge.target,
+                "line": str(edge.line or ""),
+                "confidence": edge.confidence,
+            }
+        )
+
+    rows.sort(key=lambda r: (r["confidence"], r["callee"]))
+    return rows[:limit]
+
+
 def related_files(graph: GraphStore, file_path: str, depth: int = 2, limit: int = 100) -> list[str]:
     file_nodes = [n.id for n in graph.nodes.values() if n.file == file_path]
     if not file_nodes:

@@ -62,7 +62,7 @@ Example local MCP server entry:
 
 ---
 
-## 🚀 Using Smart Workflows (Prompts)
+## Using Smart Workflows (Prompts)
 
 Code Atlas provides "Prompts" which are pre-defined workflows for AI agents.
 

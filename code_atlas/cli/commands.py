@@ -9,8 +9,9 @@ from .render import render_index_summary, render_stats_panel, render_table
 from .ui import UI, print_json
 from ..core.graph import GraphStore
 from ..core.indexing import build_graph
-from ..discovery.basic import callers_of, find_symbol, related_files
+from ..discovery.basic import callees_of, callers_of, find_symbol, related_files
 from ..discovery.traversal import impact_of, shortest_path
+from ..discovery.visual import generate_visualization
 from ..core.source import prepare_repo_source
 
 
@@ -131,6 +132,19 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
     print_json(rows, state.ui) if state.raw_mode else render_table("Callers", rows, [("caller_name", "CALLER"), ("caller", "CALLER_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
 
 
+def cmd_callees(state: ShellState, rest: list[str]) -> None:
+    """Show CALLS outgoing edges from a symbol."""
+    if not _ensure_graph(state) or not rest:
+        state.ui.warn("Usage: callees <symbol> [--limit N]")
+        return
+    limit = _parse_int_flag(rest, "--limit", 50)
+    if limit is None:
+        state.ui.warn("Usage: callees <symbol> [--limit N]")
+        return
+    rows = callees_of(state.loaded_graph, rest[0], limit=limit)
+    print_json(rows, state.ui) if state.raw_mode else render_table("Callees", rows, [("callee_name", "CALLEE"), ("callee", "CALLEE_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
+
+
 def cmd_related(state: ShellState, rest: list[str]) -> None:
     """Traverse local neighborhood from a file and list related files."""
     if not _ensure_graph(state) or not rest:
@@ -168,6 +182,45 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
         return
     rows = impact_of(state.loaded_graph, rest[0], depth=depth, limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table("Blast Radius", rows, [("distance", "DIST"), ("via", "VIA"), ("type", "TYPE"), ("name", "NAME"), ("file", "FILE")], state.ui)
+
+
+def cmd_init(state: ShellState) -> None:
+    """Smooth, zero-config onboarding for the current project."""
+    ui = state.ui
+    ui.header("Initializing Code Atlas for this project...")
+    
+    # 1. Index current directory
+    cwd = Path.cwd()
+    ui.info(f"Indexing: {cwd}")
+    cmd_index(state, ["."])
+    
+    if not state.loaded_graph:
+        ui.error("Indexing failed. Cannot proceed with initialization.")
+        return
+
+    # 2. Generate visualization
+    report_path = cwd / "atlas.html"
+    ui.info(f"Generating dashboard: {report_path}")
+    generate_visualization(state.loaded_graph, report_path)
+    
+    # 3. Provide MCP Config
+    ui.success("Initialization complete!")
+    ui.print()
+    ui.header("MCP Configuration")
+    ui.print("Add this to your `claude_desktop_config.json` or `~/.cursor/mcp.json`:")
+    ui.print()
+    
+    mcp_config = {
+        "code-atlas": {
+            "command": "uv",
+            "args": ["run", "code-atlas-mcp"],
+            "cwd": str(cwd)
+        }
+    }
+    import json
+    ui.print(f"[bold green]{json.dumps(mcp_config, indent=2)}[/]")
+    ui.print()
+    ui.info(f"Open [bold]{report_path}[/] in your browser to see the 3D map.")
 
 
 def _ensure_graph(state: ShellState) -> bool:

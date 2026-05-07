@@ -13,7 +13,7 @@ import shlex
 from collections.abc import Callable
 from pathlib import Path
 
-from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
+from .commands import ShellState, cmd_callees, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_init, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
 from .extra_commands import cmd_export, cmd_visual
 from .help import interactive_help
 from .ui import ASCII_LOGO, UI, clear_screen
@@ -78,6 +78,8 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
     # Core domain commands (delegated to commands.py)
     elif cmd == "where":
         cmd_where(state)
+    elif cmd == "init":
+        cmd_init(state)
     elif cmd == "index":
         cmd_index(state, rest)
     elif cmd == "load":
@@ -88,6 +90,8 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_find(state, rest)
     elif cmd == "callers":
         cmd_callers(state, rest)
+    elif cmd == "callees":
+        cmd_callees(state, rest)
     elif cmd == "related":
         cmd_related(state, rest)
     elif cmd == "path":
@@ -110,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Configures the command-line argument parser for the atlas entrypoint."""
     parser = argparse.ArgumentParser(prog="code-atlas", description="Knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
+    # We use parse_known_args to allow trailing commands
     return parser
 
 
@@ -120,10 +125,16 @@ def run(argv: list[str] | None = None) -> int:
     Handles preloading of graphs, the interactive input prompt, 
     and graceful shutdowns on Ctrl+C or EOF.
     """
-    args = build_parser().parse_args(argv)
     ui = UI()
+    args, remaining = build_parser().parse_known_args(argv)
+    
     graph_path = Path(args.graph).resolve()
     state = create_state(graph_path, ui)
+    
+    # If one-shot command was provided (e.g. code-atlas init)
+    if remaining:
+        dispatch_command(state, " ".join(remaining))
+        return 0
     
     _render_banner(ui)
 

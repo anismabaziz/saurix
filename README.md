@@ -64,27 +64,37 @@ flowchart TD
 
 ---
 
-## 3) Getting Started
+## Setup & Installation
 
-### Installation
+Choose the path that fits your workflow:
 
-```bash
-# Clone the repository
-git clone https://github.com/anismabaziz/code-atlas
-cd code-atlas
+### A) The "Power User" Path (Global & Project-Native)
+Recommended for using Code Atlas as a permanent tool for your own development projects.
 
-# Install dependencies and the package
-uv sync
-uv pip install -e .
-```
+1. **Install Globally**:
+   ```bash
+   pip install -e .
+   ```
+2. **Initialize Any Project**:
+   ```bash
+   cd /path/to/your/project
+   code-atlas init
+   ```
+   *This command indexes your project, creates a local 3D dashboard (`atlas.html`), and generates your MCP config in one step.*
 
-### Running the CLI
+### B) The "Developer" Path (Standalone)
+Recommended if you want to contribute to Code Atlas or run it in isolation using `uv`.
 
-Start the interactive shell:
-
-```bash
-code-atlas
-```
+1. **Clone & Setup**:
+   ```bash
+   git clone https://github.com/anismabaziz/code-atlas.git
+   cd code-atlas
+   uv sync
+   ```
+2. **Run via uv**:
+   ```bash
+   uv run code-atlas
+   ```
 
 ### Running the MCP Server
 
@@ -100,6 +110,7 @@ code-atlas-mcp
 
 | Command          | Description                                           |
 | ---------------- | ----------------------------------------------------- |
+| `init`           | Zero-config setup for the current project             |
 | `index <source>` | Index a local path or GitHub URL                      |
 | `stats`          | Show graph statistics and extraction coverage         |
 | `find <query>`   | Fuzzy search symbols by name or ID                    |
@@ -119,7 +130,7 @@ Code Atlas is optimized for agentic workflows. It exposes tools that help agents
 2. **Behavioral Mapping**: `callers` and `path_between`.
 3. **Risk Assessment**: `impact_of_symbol`.
 
-Configure your agent with the `code-atlas-mcp` entry point to enable autonomous repository exploration.
+Configure your agent with the `code-atlas-mcp` entry point. Once configured, the AI client (e.g., Claude Desktop) will automatically manage the server lifecycle—starting it in the background when needed and stopping it when the app closes. No manual terminal execution is required.
 
 ---
 
@@ -131,7 +142,7 @@ Configure your agent with the `code-atlas-mcp` entry point to enable autonomous 
 uv run pytest
 ```
 
-### 🛠️ Testing the MCP Server
+### Testing the MCP Server
 
 You can test the MCP integration without a full IDE using the **MCP Inspector**:
 

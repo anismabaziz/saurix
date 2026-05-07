@@ -17,7 +17,7 @@ from time import perf_counter
 
 from ...core.graph import GraphStore
 from ...core.indexing import build_graph
-from ...discovery.basic import callers_of, find_symbol, related_files
+from ...discovery.basic import callees_of, callers_of, find_symbol, related_files
 from ...discovery.traversal import impact_of, shortest_path
 from ...core.source import prepare_repo_source
 from .schemas import ToolError, ToolResult
@@ -142,6 +142,24 @@ def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
         return ToolResult(
             ok=False,
             error=ToolError(code="CALLERS_FAILED", message=_format_error(exc, "Failed to find callers")),
+        ).to_dict()
+
+
+def callees(graph: str | None, symbol: str, limit: int | None = None) -> dict:
+    """Identifies all functions or modules that are called by the specified symbol."""
+    t0 = perf_counter()
+    try:
+        g = GraphStore.from_json(normalize_graph_path(graph))
+        rows = callees_of(g, symbol, limit=clamp_limit(limit, 50))
+        return ToolResult(
+            ok=True,
+            data=rows,
+            meta={"duration_ms": int((perf_counter() - t0) * 1000), "count": len(rows)},
+        ).to_dict()
+    except Exception as exc:
+        return ToolResult(
+            ok=False,
+            error=ToolError(code="CALLEES_FAILED", message=_format_error(exc, "Failed to find callees")),
         ).to_dict()
 
 
