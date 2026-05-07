@@ -85,61 +85,6 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
     ui.print(table)
 
 
-def _render_counts_table(title: str, data: object, ui: UI) -> None:
-    if not isinstance(data, dict):
-        return
-    table = Table(title=title, header_style="bold cyan")
-    table.add_column("Key", style="bold")
-    table.add_column("Value", justify="right")
-    for key, value in sorted(data.items()):
-        table.add_row(str(key), str(value))
-    ui.print(table)
-
-
-def _render_percentages_table(title: str, data: object, ui: UI) -> None:
-    if not isinstance(data, dict):
-        return
-    table = Table(title=title, header_style="bold cyan")
-    table.add_column("Key", style="bold")
-    table.add_column("Percent", justify="right")
-    for key, value in sorted(data.items()):
-        table.add_row(str(key), f"{value}%")
-    ui.print(table)
-
-
-def _render_coverage_table(title: str, data: object, ui: UI) -> None:
-    if not isinstance(data, dict):
-        return
-    table = Table(title=title, header_style="bold cyan")
-    table.add_column("Language", style="bold")
-    table.add_column("Seen", justify="right")
-    table.add_column("Indexed", justify="right")
-    table.add_column("Coverage", justify="right")
-    table.add_column("Parser", justify="right")
-    for lang, row in sorted(data.items()):
-        if not isinstance(row, dict):
-            continue
-        table.add_row(
-            str(lang),
-            str(row.get("files_seen", 0)),
-            str(row.get("files_indexed", 0)),
-            f"{row.get('coverage_percent', 0.0)}%",
-            str(row.get("parser_mode", "unknown")),
-        )
-    ui.print(table)
-
-
-def _render_incremental_table(title: str, data: object, ui: UI) -> None:
-    if not isinstance(data, dict):
-        return
-    table = Table(title=title, header_style="bold cyan")
-    table.add_column("Metric", style="bold")
-    table.add_column("Value", justify="right")
-    for k in ["enabled", "cache_hits", "reindexed_files", "deleted_files", "cache_path"]:
-        table.add_row(k, str(data.get(k, "-")))
-    ui.print(table)
-
-
 def render_table(title: str, rows: list[dict[str, str]], columns: list[tuple[str, str]], ui: UI) -> None:
     if not rows:
         ui.warn("No results.")
