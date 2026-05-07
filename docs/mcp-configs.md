@@ -2,7 +2,8 @@
 
 Use these snippets to connect Code Atlas MCP server to common clients.
 
-Assumption: project path is `/Users/abaziz/Documents/programming/portfolio-projects/code-atlas`.
+> [!IMPORTANT]
+> Replace `/YOUR/PATH/TO/code-atlas` with the actual absolute path to this repository on your machine.
 
 ## Claude Desktop
 
@@ -15,11 +16,9 @@ Assumption: project path is `/Users/abaziz/Documents/programming/portfolio-proje
       "command": "uv",
       "args": [
         "run",
-        "python",
-        "-m",
-        "code_atlas.mcp.server"
+        "code-atlas-mcp"
       ],
-      "cwd": "/Users/abaziz/Documents/programming/portfolio-projects/code-atlas"
+      "cwd": "/YOUR/PATH/TO/code-atlas"
     }
   }
 }
@@ -36,11 +35,9 @@ Assumption: project path is `/Users/abaziz/Documents/programming/portfolio-proje
       "command": "uv",
       "args": [
         "run",
-        "python",
-        "-m",
-        "code_atlas.mcp.server"
+        "code-atlas-mcp"
       ],
-      "cwd": "/Users/abaziz/Documents/programming/portfolio-projects/code-atlas"
+      "cwd": "/YOUR/PATH/TO/code-atlas"
     }
   }
 }
@@ -57,12 +54,20 @@ Example local MCP server entry:
   "command": "uv",
   "args": [
     "run",
-    "python",
-    "-m",
-    "code_atlas.mcp.server"
+    "code-atlas-mcp"
   ],
-  "cwd": "/Users/abaziz/Documents/programming/portfolio-projects/code-atlas"
+  "cwd": "/YOUR/PATH/TO/code-atlas"
 }
 ```
 
-Note: exact Copilot config location/shape may vary by editor version; keep command/args/cwd the same.
+---
+
+## 🚀 Using Smart Workflows (Prompts)
+
+Code Atlas provides "Prompts" which are pre-defined workflows for AI agents.
+
+### How to use:
+1. **In Claude Desktop**: Click the "Prompts" icon (or a spark icon) and select `repo-onboarding` or `analyze-change`.
+2. **In other clients**: Simply ask the agent: *"Use the code-atlas repo-onboarding prompt"* or *"Run the analyze-change prompt for the symbol 'MyClass'"*.
+
+These prompts guide the agent through a structured sequence of indexing, statistics gathering, and architectural analysis.

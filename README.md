@@ -1,8 +1,19 @@
 # Code Atlas
 
-![Code Atlas CLI](docs/assets/tui-preview.png)
 
-Code Atlas is a production-grade repository intelligence system that transforms source code into a queryable knowledge graph. Designed for AI agents and developers, it provides the structural and semantic infrastructure needed to reason about large codebases.
+
+Code Atlas is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
+
+## 🚀 Why Code Atlas for AI Agents?
+
+Code Atlas solves the "Context Window" problem for LLMs by providing a structured representation of code that is superior to keyword search:
+
+- **Structural Awareness**: Understands `CALLS`, `INHERITS`, and `IMPORTS` relationships rather than just raw text.
+- **Context Efficiency**: Agents can query specific subgraphs, receiving only the architectural context they need, drastically reducing token usage.
+- **Blast Radius Analysis**: Built-in `impact` analysis allows agents to calculate the transitive side effects of a proposed change before making it.
+- **Native MCP Support**: Built on the **Model Context Protocol**, allowing AI agents to treat the repository graph as an extension of their own memory.
+
+See [docs/agent-lifecycle.md](docs/agent-lifecycle.md) for a step-by-step walkthrough of how an AI agent uses these capabilities.
 
 ---
 
@@ -97,7 +108,7 @@ code-atlas-mcp
 | `callers <sym>` | List symbols calling the target |
 | `path <A> <B>` | Find shortest directed path between two symbols |
 | `impact <sym>` | Estimate blast radius of a change |
-| `visual` | Generate an immersive 3D graph visualization (Three.js) |
+| `visual` | Generate a hybrid 2D/3D knowledge graph visualization |
 | `export` | Export to GraphML or Neo4j CSV |
 
 ---
@@ -121,6 +132,16 @@ Configure your agent with the `code-atlas-mcp` entry point to enable autonomous 
 ```bash
 uv run pytest
 ```
+
+### 🛠️ Testing the MCP Server
+
+You can test the MCP integration without a full IDE using the **MCP Inspector**:
+
+1. **Install the Inspector**: `npm install -g @modelcontextprotocol/inspector`
+2. **Run the Server**: `npx @modelcontextprotocol/inspector uv run code-atlas-mcp`
+3. **Interact**: Open `http://localhost:5173`, click **Connect**, and use the **Call Tool** tab.
+
+For full setup guides (Claude Desktop, Cursor), see [docs/mcp-configs.md](docs/mcp-configs.md).
 
 ### Roadmap
 

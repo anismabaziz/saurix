@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
-from code_atlas.cache import DEFAULT_CACHE_PATH
-from code_atlas.indexer import build_graph
+from code_atlas.core.cache import DEFAULT_CACHE_PATH
+from code_atlas.core.indexing import build_graph
 
 
 @dataclass

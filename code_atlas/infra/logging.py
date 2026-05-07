@@ -9,11 +9,12 @@ from rich.logging import RichHandler
 
 def setup_logging(level: int = logging.INFO) -> None:
     """Configure structured logging using Rich."""
+    from rich.console import Console
     logging.basicConfig(
         level=level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(rich_tracebacks=True, markup=True)]
+        handlers=[RichHandler(console=Console(stderr=True), rich_tracebacks=True, markup=True)]
     )
 
 

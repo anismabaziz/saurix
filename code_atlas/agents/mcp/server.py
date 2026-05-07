@@ -66,6 +66,29 @@ def create_server():
         """List graph-neighborhood related files for one file path."""
         return handlers.related(graph=graph, file=file, depth=depth, limit=limit)
 
+    # --- MCP Prompts (Smart Workflows) ---
+
+    @app.prompt()
+    def repo_onboarding() -> str:
+        """A workflow to quickly understand a new repository's architecture."""
+        return (
+            "You are an expert architect. First, check if a `code-atlas.graph.json` exists in the current directory. "
+            "If not, use the `index_repo` tool with source='.' to create one. "
+            "Once indexed, use the `stats` tool to get an overview of the repo's composition. "
+            "Then, use `find_symbol` to identify the main entry points or core classes, "
+            "and finally explain the high-level architecture to the user."
+        )
+
+    @app.prompt()
+    def analyze_change(symbol: str) -> str:
+        """A workflow to assess the risk of changing a specific symbol."""
+        return (
+            f"I want to modify the symbol: {symbol}. "
+            f"1. Use code-atlas `impact_of_symbol` with depth 2 to find everything that might break. "
+            f"2. Use `related_files` to find which files I should check for regressions. "
+            "3. Provide a summary of the 'Blast Radius' and a recommended testing strategy."
+        )
+
     return app
 
 
