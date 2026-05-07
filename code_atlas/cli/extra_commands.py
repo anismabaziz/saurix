@@ -5,7 +5,28 @@ from __future__ import annotations
 from pathlib import Path
 
 from .commands import ShellState
-from ..exporters import build_visual_html, build_visual_html_all, export_graphml, export_neo4j_csv
+from ..discovery.visual import generate_visualization
+from ..exporters import export_graphml, export_neo4j_csv
+
+
+def cmd_visual(state: ShellState, rest: list[str]) -> None:
+    """Generate and open a lightweight HTML graph visualization."""
+    if state.loaded_graph is None:
+        state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
+        return
+    
+    out = _parse_path_flag(rest, "--out", Path("tmp") / "viz.html")
+    limit = _parse_int_flag(rest, "--limit", 2000)
+    
+    try:
+        viz_path = generate_visualization(state.loaded_graph, out, limit=limit)
+        state.ui.success(f"Visualization generated: {viz_path}")
+        
+        if "--no-open" not in rest:
+            import webbrowser
+            webbrowser.open(f"file://{viz_path.resolve()}")
+    except Exception as exc:
+        state.ui.error(f"Visualization failed: {exc}")
 
 
 def cmd_export(state: ShellState, rest: list[str]) -> None:
@@ -27,46 +48,6 @@ def cmd_export(state: ShellState, rest: list[str]) -> None:
         state.ui.success(f"Neo4j CSV exported: {nodes_csv} and {edges_csv}")
     else:
         state.ui.warn("Unknown export format. Use 'graphml' or 'neo4j'.")
-
-
-def cmd_visual(state: ShellState, rest: list[str]) -> None:
-    """Generate and open interactive HTML subgraph view."""
-    if state.loaded_graph is None:
-        state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
-        return
-    if not rest:
-        state.ui.warn("Usage: visual <symbol> [--depth N] [--limit N] [--out PATH]")
-        return
-
-    depth = _parse_int_flag(rest, "--depth", 2)
-    limit = _parse_int_flag(rest, "--limit", 120)
-    out = _parse_path_flag(rest, "--out", Path("tmp") / "graph-view.html")
-    if depth is None or limit is None:
-        state.ui.warn("Usage: visual <symbol> [--depth N] [--limit N] [--out PATH]")
-        return
-
-    html_path = build_visual_html(state.loaded_graph, rest[0], out, depth=depth, limit=limit, open_browser=True)
-    state.ui.success(f"Opened interactive graph: {html_path}")
-
-
-def cmd_visual_all(state: ShellState, rest: list[str]) -> None:
-    """Generate and open interactive HTML view for the full graph."""
-    if state.loaded_graph is None:
-        state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
-        return
-
-    limit = _parse_int_flag(rest, "--limit", 800)
-    out = _parse_path_flag(rest, "--out", Path("tmp") / "graph-view-all.html")
-    if limit is None:
-        state.ui.warn("Usage: visual-all [--limit N] [--out PATH]")
-        return
-
-    html_path = build_visual_html_all(state.loaded_graph, out, node_limit=limit, open_browser=True)
-    stats = state.loaded_graph.stats()
-    nodes = stats.get("nodes", 0) if isinstance(stats, dict) else 0
-    if isinstance(nodes, int) and nodes > limit:
-        state.ui.warn(f"Full graph was truncated to top {limit} nodes for browser performance.")
-    state.ui.success(f"Opened full interactive graph: {html_path}")
 
 
 def _parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:

@@ -7,6 +7,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
+from ..infra.logging import get_logger
+
+logger = get_logger(__name__)
 
 _GITHUB_HOSTS = {"github.com", "www.github.com"}
 
@@ -39,8 +42,10 @@ def normalize_github_clone_url(source: str) -> tuple[str, str]:
 
 @contextmanager
 def prepare_repo_source(source: str):
+    """Prepare a repository source, either local or cloned from GitHub."""
     candidate = Path(source).expanduser()
     if candidate.exists():
+        logger.info(f"Using local source: {candidate}")
         yield candidate.resolve(), "local"
         return
 
@@ -53,6 +58,7 @@ def prepare_repo_source(source: str):
     tmp_root = Path(tempfile.mkdtemp(prefix="code-atlas-"))
     clone_target = tmp_root / "repo"
 
+    logger.info(f"Cloning GitHub repository: {slug}")
     try:
         command = ["git", "clone", "--depth", "1", clone_url, str(clone_target)]
         completed = subprocess.run(command, capture_output=True, text=True, check=False)
@@ -60,8 +66,10 @@ def prepare_repo_source(source: str):
             stderr = (completed.stderr or "").strip()
             stdout = (completed.stdout or "").strip()
             details = stderr or stdout or "unknown git clone error"
+            logger.error(f"Git clone failed: {details}")
             raise RuntimeError(f"Failed to clone {slug}: {details}")
 
         yield clone_target, f"github:{slug}"
     finally:
+        logger.debug(f"Cleaning up temporary directory: {tmp_root}")
         shutil.rmtree(tmp_root, ignore_errors=True)

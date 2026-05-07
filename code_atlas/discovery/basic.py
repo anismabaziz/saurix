@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from ..graph import GraphStore
+from ..core.graph import GraphStore
 
 
 def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[str, str]]:

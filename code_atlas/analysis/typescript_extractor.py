@@ -6,8 +6,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ..graph import GraphStore
-from ..models import Edge
+from ..core.graph import GraphStore
+from ..core.models import Edge
 from .common import add_calls_edge, add_contains_edge, add_import_edge, add_node
 from .regex_lang import RegexLangExtractor
 from .tree_sitter_support import find_first_desc, get_parser, stripped_string, text_of, walk

@@ -13,7 +13,7 @@ dependencies = [
 
 [project.scripts]
 code-atlas = "code_atlas.cli:run"
-code-atlas-mcp = "code_atlas.mcp:run"
+code-atlas-mcp = "code_atlas.agents.mcp:run"
 
 [build-system]
 requires = ["hatchling>=1.25.0"]

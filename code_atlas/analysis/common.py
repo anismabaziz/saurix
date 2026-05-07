@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..graph import GraphStore
-from ..models import Edge, Node
+from ..core.graph import GraphStore
+from ..core.models import Edge, Node
 
 
 def add_contains_edge(

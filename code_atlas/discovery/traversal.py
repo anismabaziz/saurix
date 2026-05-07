@@ -3,8 +3,9 @@ from __future__ import annotations
 """Graph traversal queries: symbol resolution, shortest path, impact, subgraph."""
 
 from collections import defaultdict, deque
+from typing import Any
 
-from ..graph import GraphStore
+from ..core.graph import GraphStore
 from .basic import find_symbol
 
 
@@ -13,7 +14,7 @@ def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[
     if symbol in graph.nodes:
         return [symbol]
 
-    exact = [node.id for node in graph.nodes.values() if node.name == symbol]
+    exact = [node.id for node in graph.get_nodes_by_name(symbol)]
     if exact:
         return exact[:limit]
 
@@ -36,11 +37,6 @@ def shortest_path(
     if not source_ids or not target_ids:
         return []
 
-    adjacency: dict[str, list[tuple[str, str]]] = defaultdict(list)
-    for edge in graph.edges:
-        if edge.type in allowed:
-            adjacency[edge.source].append((edge.target, edge.type))
-
     queue: deque[tuple[str, int]] = deque()
     prev: dict[str, tuple[str | None, str | None]] = {}
 
@@ -57,10 +53,13 @@ def shortest_path(
         if depth >= max_depth:
             continue
 
-        for nxt, edge_type in adjacency.get(node_id, []):
+        for edge in graph.get_edges_from(node_id):
+            if edge.type not in allowed:
+                continue
+            nxt = edge.target
             if nxt in prev:
                 continue
-            prev[nxt] = (node_id, edge_type)
+            prev[nxt] = (node_id, edge.type)
             queue.append((nxt, depth + 1))
 
     if hit is None:
@@ -105,11 +104,6 @@ def impact_of(
     if not seeds:
         return []
 
-    reverse_adj: dict[str, list[tuple[str, str]]] = defaultdict(list)
-    for edge in graph.edges:
-        if edge.type in allowed:
-            reverse_adj[edge.target].append((edge.source, edge.type))
-
     queue: deque[tuple[str, int]] = deque((seed, 0) for seed in seeds)
     visited = set(seeds)
     rows: list[dict[str, str]] = []
@@ -118,7 +112,11 @@ def impact_of(
         node_id, d = queue.popleft()
         if d >= depth:
             continue
-        for parent, via in reverse_adj.get(node_id, []):
+        
+        for edge in graph.get_edges_to(node_id):
+            if edge.type not in allowed:
+                continue
+            parent = edge.source
             if parent in visited:
                 continue
             visited.add(parent)
@@ -127,13 +125,15 @@ def impact_of(
             rows.append(
                 {
                     "distance": str(d + 1),
-                    "via": via,
+                    "via": edge.type,
                     "id": parent,
                     "type": node.type if node else "unknown",
                     "name": node.name if node else parent,
                     "file": (node.file if node else "") or "",
                 }
             )
+            if len(rows) >= limit:
+                break
 
     rows.sort(key=lambda r: (int(r["distance"]), r["type"], r["id"]))
     return rows[:limit]
@@ -145,23 +145,25 @@ def neighborhood_subgraph(
     *,
     depth: int = 2,
     limit: int = 120,
-) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Build bounded undirected neighborhood for visualization/export."""
     seeds = resolve_symbol_ids(graph, symbol)
     if not seeds:
         return [], []
-
-    undirected: dict[str, set[str]] = defaultdict(set)
-    for edge in graph.edges:
-        undirected[edge.source].add(edge.target)
-        undirected[edge.target].add(edge.source)
 
     visited = set(seeds)
     frontier = set(seeds)
     for _ in range(max(depth, 0)):
         next_frontier: set[str] = set()
         for node_id in frontier:
-            for neighbor in undirected.get(node_id, set()):
+            # Undirected traversal using both forward and backward indexes
+            neighbors = set()
+            for e in graph.get_edges_from(node_id):
+                neighbors.add(e.target)
+            for e in graph.get_edges_to(node_id):
+                neighbors.add(e.source)
+            
+            for neighbor in neighbors:
                 if len(visited) >= limit:
                     break
                 if neighbor in visited:
@@ -172,7 +174,7 @@ def neighborhood_subgraph(
         if not frontier or len(visited) >= limit:
             break
 
-    nodes: list[dict[str, str]] = []
+    nodes: list[dict[str, Any]] = []
     for node_id in sorted(visited):
         node = graph.nodes.get(node_id)
         if node is None:
@@ -187,16 +189,24 @@ def neighborhood_subgraph(
             }
         )
 
-    edges: list[dict[str, str]] = []
-    for edge in graph.edges:
-        if edge.source in visited and edge.target in visited:
-            edges.append(
-                {
-                    "source": edge.source,
-                    "target": edge.target,
-                    "type": edge.type,
-                    "confidence": edge.confidence,
-                }
-            )
+    edges: list[dict[str, Any]] = []
+    # Collect edges where at least one endpoint is in our visited set (or both?)
+    # Usually for a subgraph we want edges where BOTH are in visited.
+    # To be efficient, we iterate over visited nodes and their outgoing edges.
+    seen_edges = set()
+    for node_id in visited:
+        for edge in graph.get_edges_from(node_id):
+            if edge.target in visited:
+                edge_key = (edge.source, edge.target, edge.type)
+                if edge_key not in seen_edges:
+                    seen_edges.add(edge_key)
+                    edges.append(
+                        {
+                            "source": edge.source,
+                            "target": edge.target,
+                            "type": edge.type,
+                            "confidence": edge.confidence,
+                        }
+                    )
 
     return nodes, edges

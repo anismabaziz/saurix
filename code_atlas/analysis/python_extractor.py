@@ -9,8 +9,8 @@ from .base import Extractor
 from .common import add_import_edge, add_node
 from .python_builder import add_class, add_function
 from .python_utils import name_of, resolve_name
-from ..graph import GraphStore
-from ..models import Edge
+from ..core.graph import GraphStore
+from ..core.models import Edge
 
 
 class PythonExtractor(Extractor):

@@ -4,7 +4,7 @@ import csv
 import html
 from pathlib import Path
 
-from ..graph import GraphStore
+from ..core.graph import GraphStore
 
 
 def export_graphml(graph: GraphStore, out_path: Path) -> Path:

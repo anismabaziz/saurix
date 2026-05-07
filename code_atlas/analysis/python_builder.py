@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 
-from ..graph import GraphStore
+from ..core.graph import GraphStore
 from .common import add_calls_edge, add_contains_edge, add_node
 from .python_utils import call_confidence, name_of, resolve_name
 

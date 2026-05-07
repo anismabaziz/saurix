@@ -6,10 +6,11 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from ..graph import GraphStore
-from ..indexer import build_graph
-from ..query import callers_of, find_symbol, impact_of, related_files, shortest_path
-from ..repo_source import prepare_repo_source
+from ...core.graph import GraphStore
+from ...core.indexing import build_graph
+from ...discovery.basic import callers_of, find_symbol, related_files
+from ...discovery.traversal import impact_of, shortest_path
+from ...core.source import prepare_repo_source
 from .schemas import ToolError, ToolResult
 from .utils import clamp_depth, clamp_limit, normalize_graph_path
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from .base import Extractor
-from ..graph import GraphStore
-from ..models import Node
+from ..core.graph import GraphStore
+from ..core.models import Node
 
 
 class StubExtractor(Extractor):

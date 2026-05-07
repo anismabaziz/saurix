@@ -2,420 +2,133 @@
 
 ![Code Atlas CLI](docs/assets/tui-preview.png)
 
-Code Atlas turns a repo into a **knowledge graph** so humans and AI agents can explore code structure fast.
-
-Instead of reading files one-by-one, you can ask:
-
-- where a symbol is defined
-- who calls it
-- how two symbols are connected
-- what may break if a symbol changes
+Code Atlas is a production-grade repository intelligence system that transforms source code into a queryable knowledge graph. Designed for AI agents and developers, it provides the structural and semantic infrastructure needed to reason about large codebases.
 
 ---
 
-## 1) One-minute mental model
+## 1) Core Mission
+
+- **Knowledge Extraction**: Turn local or GitHub repositories into a structured graph of symbols and relationships.
+- **Agent Infrastructure**: Expose high-level tools (MCP) for autonomous agents to navigate complex architectures.
+- **Fast Navigation**: Answer questions about dependencies, callers, and impact analysis in milliseconds.
+- **Modular Architecture**: Built for extensibility across languages and tools.
+
+---
+
+## 2) Architecture
+
+Code Atlas follows a clean, domain-driven modular structure:
 
 ```mermaid
-flowchart LR
-    A[Repo Path or GitHub URL] --> B[Scan Files]
-    B --> C[Parse + Resolve Symbols]
-    C --> D[Build Graph Nodes + Edges]
-    D --> E[Query / Export / Visualize]
+flowchart TD
+    subgraph core
+        A[Indexing] --> B[Graph Store]
+        B --> C[Cache]
+        D[Source Prep] --> A
+    end
+    subgraph analysis
+        E[Extractors] --> A
+        F[Python] --> E
+        G[TypeScript] --> E
+        H[Go/Java/Stub] --> E
+    end
+    subgraph discovery
+        I[Search/Query] --> B
+        J[Traversal/Impact] --> B
+        K[Visualizer] --> B
+    end
+    subgraph agents
+        L[MCP Server] --> discovery
+        L --> core
+    end
+    subgraph cli
+        M[Interactive Shell] --> discovery
+        M --> core
+    end
 ```
 
-Think of it as:
-
-- **Scanner** finds code files.
-- **Extractors** read syntax and relationships.
-- **Graph Store** saves structure and maintains fast lookup indexes.
-- **Query Engine** answers navigation/debug questions.
+- **`code_atlas.core`**: Root indexing orchestration, graph models, and incremental caching.
+- **`code_atlas.analysis`**: Language-specific AST and Tree-sitter extractors.
+- **`code_atlas.discovery`**: Relationship discovery, search logic, and visualization generation.
+- **`code_atlas.agents.mcp`**: Tooling interface for AI agents.
+- **`code_atlas.infra`**: Centralized configuration and structured logging.
 
 ---
 
-## 2) How to run
+## 3) Getting Started
 
-Install dependencies first:
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/anismabaziz/code-atlas
+cd code-atlas
+
+# Install dependencies and the package
 uv sync
-```
-
-Run tests (project test suite only):
-
-```bash
-uv run pytest tests
-```
-
-Install command-line entry points in your current environment:
-
-```bash
 uv pip install -e .
 ```
 
-Then run as a normal command-line app:
+### Running the CLI
+
+Start the interactive shell:
 
 ```bash
 code-atlas
 ```
 
-Start the interactive CLI:
+### Running the MCP Server
 
-```bash
-code-atlas
-```
-
-or:
-
-```bash
-uv run python main.py
-```
-
-Default graph file is:
-
-`tmp/code-atlas.graph.json`
-
----
-
-## 3) Typical workflow
-
-```mermaid
-sequenceDiagram
-    participant U as You
-    participant CLI as Code Atlas CLI
-    participant IDX as Indexer
-    participant G as Graph Store
-    participant V as Browser Visual
-
-    U->>CLI: index https://github.com/owner/repo
-    CLI->>IDX: scan + parse + resolve
-    IDX->>G: write tmp/code-atlas.graph.json
-    U->>CLI: find auth
-    CLI->>G: query nodes
-    U->>CLI: callers python://pkg.auth:login
-    CLI->>G: query edges
-    U->>CLI: visual login
-    CLI->>V: open interactive HTML subgraph
-```
-
----
-
-## 4) Commands (inside interactive shell)
-
-```text
-help
-index <repo-or-github-url> [--out PATH] [--exclude dir1,dir2]
-load [PATH]
-stats
-find <name> [--limit N]
-callers <symbol> [--limit N]
-related <file> [--depth N] [--limit N]
-path <from> <to> [--max-depth N]
-impact <symbol> [--depth N] [--limit N]
-export graphml [--out PATH]
-export neo4j [--out DIR]
-visual <symbol> [--depth N] [--limit N] [--out PATH]
-visual-all [--limit N] [--out PATH]
-raw on|off
-where
-clear
-exit
-```
-
-### Stats quality reporting
-
-`stats` now includes quality and coverage signals:
-
-- confidence distribution (count + %) for edges: `high`, `medium`, `low`
-- extraction coverage per language:
-  - files seen
-  - files indexed
-  - coverage percentage
-  - parser mode (`ast`, `tree-sitter`, `regex-fallback`, `stub`)
-
-`index` also prints clear progress checkpoints (prepare source, scan files, write graph) to make longer indexing runs easier to track.
-
-Index progress is shown live on a single terminal line while indexing runs.
-
-```mermaid
-flowchart LR
-    A[Extracted Edges] --> B[Confidence Buckets]
-    B --> C[high/medium/low %]
-    D[Scanned Files by Language] --> E[Indexed Files by Language]
-    E --> F[Coverage % + Parser Mode]
-    C --> G[stats panel]
-    F --> G
-```
-
-### Incremental indexing cache
-
-Code Atlas now keeps an incremental cache at `tmp/code-atlas.cache.json`.
-
-How it works:
-
-1. Scan files and compute a content hash per file.
-2. Compare with previous cache entries (hash + language + parser mode).
-3. If unchanged, reuse cached nodes/edges (cache hit).
-4. If changed/new, re-extract only that file.
-5. If deleted, drop its cached contribution.
-6. Save updated graph + cache for next run.
-
-```mermaid
-flowchart LR
-    A[Scan Files] --> B[Hash + Compare Cache]
-    B --> C{Changed?}
-    C -- No --> D[Reuse cached contribution]
-    C -- Yes --> E[Re-extract file]
-    D --> F[Merge graph]
-    E --> F
-    F --> G[Write graph JSON]
-    F --> H[Write cache JSON]
-```
-
-`stats` includes an `Incremental Cache` section with:
-
-- `cache_hits`
-- `reindexed_files`
-- `deleted_files`
-
-### Benchmark snapshot
-
-Benchmarks are generated by `scripts/benchmark_incremental.py` and stored in:
-
-- `docs/benchmarks.md`
-
-Current snapshot (cold run vs warm incremental run):
-
-| Repo | Lang | Full Index (s) | Incremental Re-index (s) | Speedup | Cache Hits | Reindexed Files |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `pallets/flask` | python | 0.20 | 0.09 | 2.27x | 83 | 0 |
-| `axios/axios` | typescript | 0.09 | 0.05 | 1.87x | 280 | 0 |
-| `google/gson` | java | 0.75 | 0.31 | 2.45x | 259 | 0 |
-
----
-
-## 5) What is a symbol?
-
-A symbol is any named code entity represented in the graph.
-
-```mermaid
-flowchart TD
-    A[module] --> B[class]
-    A --> C[function]
-    B --> D[method]
-    C --> E[call target symbol]
-```
-
-Examples:
-
-- `python://code_atlas.query` (module)
-- `python://code_atlas.query:find_symbol` (function)
-- `python://pkg.mod:Class.method` (method)
-
-Tip: use `find <text>` first to discover valid symbol IDs.
-
----
-
-## 6) Architecture (simple)
-
-```mermaid
-flowchart LR
-    A[CLI Shell\ncode_atlas/cli/app.py] --> B[Repo Source\nrepo_source.py]
-    B --> C[Scanner\nscanner.py]
-    C --> D[Indexer\nindexer.py]
-    D --> E1[Python Extractor\nextractors/python_extractor.py]
-    D --> E2[TypeScript Extractor\nextractors/typescript_extractor.py]
-    D --> E3[Go Extractor\nextractors/go_extractor.py]
-    D --> E4[Java Extractor\nextractors/java_extractor.py]
-    D --> E5[Stub Extractor\nextractors/stub_extractor.py]
-    E1 --> F[Resolver\nimports/self/local symbols]
-    E2 --> G[TS Nodes + Edges]
-    E3 --> H2[Go Nodes + Edges]
-    E4 --> J2[Java Nodes + Edges]
-    E5 --> G2[File Nodes]
-    F --> H[Graph Store\ngraph.py + models.py]
-    G --> H
-    H2 --> H
-    J2 --> H
-    G2 --> H
-    H --> I[Query Engine\nquery.py]
-    H --> J[Exporters\nexporters.py]
-    I --> K[find/callers/path/impact]
-    J --> L[JSON/GraphML/Neo4j/HTML]
-```
-
----
-
-## 7) Parser flow (Python today)
-
-```mermaid
-flowchart TD
-    A[Read .py file] --> B[ast.parse]
-    B --> C[Collect imports + defs]
-    C --> D[Walk classes/functions]
-    D --> E[Extract calls + inheritance]
-    E --> F[Resolve names best-effort]
-    F --> G[Emit nodes + edges]
-```
-
-Edges currently include:
-
-- `CONTAINS`
-- `IMPORTS`
-- `CALLS`
-- `INHERITS`
-
-Resolution is best-effort (Python is dynamic), so edges carry confidence.
-
----
-
-## 8) Path + blast radius
-
-```mermaid
-flowchart LR
-    A[path from A to B] --> B[Shortest directed traversal]
-    C[impact X] --> D[Reverse traversal from X]
-    B --> E[Debug dependency chains]
-    D --> F[Estimate change risk]
-```
-
-- `path` helps explain how two symbols connect.
-- `impact` shows likely upstream breakage surface.
-
----
-
-## 9) Visualization + exports
-
-```mermaid
-flowchart LR
-    A[Graph Store] --> B[visual <symbol>]
-    A --> B2[visual-all]
-    A --> C[export graphml]
-    A --> D[export neo4j]
-    B --> E[Interactive HTML in browser]
-    B2 --> E
-    C --> F[Gephi / graph tools]
-    D --> G[Neo4j import]
-```
-
-Default artifact locations (under git-ignored `tmp/`):
-
-- `tmp/code-atlas.graph.json`
-- `tmp/graph-view.html`
-- `tmp/graph-view-all.html`
-- `tmp/code-atlas.graphml`
-- `tmp/neo4j/nodes.csv`
-- `tmp/neo4j/edges.csv`
-
-### Visual features
-
-The browser graph now includes:
-
-- robust graph rendering with automatic 3D/2D fallback depending on dataset size/browser support
-- search by node name/id
-- edge-type filters (`CALLS`, `IMPORTS`, `CONTAINS`, `INHERITS`)
-- confidence-colored edges
-- path highlight between two nodes (directed or undirected)
-- interactive node details panel
-- camera navigation + `Fit`, `Pause/Resume`, and `Reset` controls
-- full-graph mode via `visual-all` with a default node cap (`800`) for browser performance
-
----
-
-## 10) Example session
-
-```text
-index .
-stats
-find find_symbol
-callers python://code_atlas.query:find_symbol
-path python://code_atlas.cli:_cmd_interactive python://code_atlas.query:find_symbol
-impact python://code_atlas.query:find_symbol --depth 3
-visual find_symbol
-export graphml --out tmp/repo.graphml
-export neo4j --out tmp/neo4j
-```
-
----
-
-## 11) Current limitations
-
-- Deep semantic extraction is strongest for Python right now.
-- TypeScript extraction now handles richer symbols (classes, interfaces, methods/properties), more import styles (default/named/namespace/side-effect), and improved call resolution; dynamic patterns are still best-effort.
-- Go and Java use Tree-sitter parsing when available, with regex fallback when parser dependencies are missing.
-- Other languages currently use a fallback file-level extractor.
-- Dynamic runtime behavior cannot be perfectly resolved statically.
-
----
-
-## 12) Roadmap
-
-```mermaid
-flowchart LR
-    A[Tree-sitter expansion\nJS/Java + richer TS/Go] --> B[Better symbol resolution]
-    B --> C[Incremental indexing cache]
-    C --> D[More query intelligence]
-```
-
----
-
-## 13) MCP integration (for AI agents)
-
-Code Atlas includes an MCP server so AI agents can call graph tools directly.
-
-Start the MCP server (stdio transport):
+Expose graph tools to AI agents (e.g., Claude Desktop, Cursor):
 
 ```bash
 code-atlas-mcp
 ```
 
-Exposed MCP tools:
+---
 
-- `index_repo(source, out?)`
-- `stats(graph?)`
-- `find_symbol(graph, query, limit?)`
-- `callers(graph, symbol, limit?)`
-- `path_between(graph, source, target, max_depth?)`
-- `impact_of_symbol(graph, symbol, depth?, limit?)`
-- `related_files(graph, file, depth?, limit?)`
+## 4) Interactive Commands
 
-Tool responses follow a structured shape:
+| Command | Description |
+| --- | --- |
+| `index <source>` | Index a local path or GitHub URL |
+| `stats` | Show graph statistics and extraction coverage |
+| `find <query>` | Fuzzy search symbols by name or ID |
+| `callers <sym>` | List symbols calling the target |
+| `path <A> <B>` | Find shortest directed path between two symbols |
+| `impact <sym>` | Estimate blast radius of a change |
+| `visual` | Generate a lightweight D3.js visualization |
+| `export` | Export to GraphML or Neo4j CSV |
 
-```json
-{
-  "ok": true,
-  "data": {},
-  "meta": { "duration_ms": 12 }
-}
+---
+
+## 5) AI Agent Integration (MCP)
+
+Code Atlas is optimized for agentic workflows. It exposes tools that help agents understand:
+
+1. **Context Discovery**: `find_symbol` and `related_files`.
+2. **Behavioral Mapping**: `callers` and `path_between`.
+3. **Risk Assessment**: `impact_of_symbol`.
+
+Configure your agent with the `code-atlas-mcp` entry point to enable autonomous repository exploration.
+
+---
+
+## 6) Development
+
+### Running Tests
+
+```bash
+uv run pytest
 ```
 
-Errors follow the same envelope with structured codes/messages:
+### Roadmap
 
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "GRAPH_NOT_FOUND",
-    "message": "Graph file not found: ..."
-  }
-}
-```
+- [ ] **Rich Cross-Language Resolution**: Better linking across monorepos.
+- [ ] **LLM Integration**: Optional LLM-powered relationship refinement.
+- [ ] **Remote Store**: Support for remote graph databases (Neo4j/Memgraph).
+- [ ] **Dynamic Language Support**: Plug-and-play extractor modules.
 
-Common MCP error codes:
+---
 
-- `SOURCE_NOT_FOUND`, `INVALID_SOURCE`, `PERMISSION_DENIED`
-- `GRAPH_NOT_FOUND`, `INVALID_GRAPH`
-- `INDEX_FAILED`, `STATS_FAILED`, `FIND_FAILED`, `CALLERS_FAILED`, `PATH_FAILED`, `IMPACT_FAILED`, `RELATED_FAILED`
-
-Client setup and examples:
-
-- MCP client snippets: `docs/mcp-configs.md`
-- 5-call walkthrough demo: `demo-mcp.md`
-
-### Portfolio demo assets (screenshots / GIFs)
-
-Add these files and reference them in your portfolio:
-
-- `docs/assets/cli-workflow.png` - interactive CLI indexing/query flow
-- `docs/assets/visual-workflow.png` - graph UI with filters and path highlight
-- `docs/assets/mcp-workflow.png` - MCP tool-call sequence and outputs
-- `docs/assets/code-atlas-demo.gif` - short end-to-end animated demo
+*Code Atlas is built for the era of autonomous coding.*

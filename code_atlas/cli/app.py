@@ -8,13 +8,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .commands import ShellState, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
-from .extra_commands import cmd_export, cmd_visual, cmd_visual_all
+from .extra_commands import cmd_export, cmd_visual
 from .help import interactive_help
 from .ui import ASCII_LOGO, UI, clear_screen
-from ..graph import GraphStore
+from ..core.graph import GraphStore
+from ..infra.config import config
 
 
-DEFAULT_GRAPH_RELATIVE = Path("tmp") / "code-atlas.graph.json"
+DEFAULT_GRAPH_RELATIVE = config.default_graph_path
 
 
 def create_state(graph_path: Path, ui: UI) -> ShellState:
@@ -77,8 +78,6 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_export(state, rest)
     elif cmd == "visual":
         cmd_visual(state, rest)
-    elif cmd == "visual-all":
-        cmd_visual_all(state, rest)
     else:
         ui.warn("Unknown command. Type 'help' for usage.")
     return True

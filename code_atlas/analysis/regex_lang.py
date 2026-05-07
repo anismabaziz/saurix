@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..graph import GraphStore
+from ..core.graph import GraphStore
 from .base import Extractor
 from .common import add_calls_edge, add_contains_edge, add_import_edge, add_node
 
