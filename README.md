@@ -26,54 +26,15 @@ See [docs/agent-lifecycle.md](docs/agent-lifecycle.md) for a step-by-step walkth
 
 ## 2) Architecture
 
-Saurix follows a clean, domain-driven modular structure:
-
-```mermaid
-flowchart TD
-    subgraph core
-        A[Indexing] --> B[Graph Store]
-        B --> C[Cache]
-        D[Source Prep] --> A
-    end
-    subgraph analysis
-        E[Extractors] --> A
-        F[Python] --> E
-        G[TypeScript] --> E
-        H[Go/Java/Stub] --> E
-    end
-    subgraph discovery
-        I[Search/Query] --> B
-        J[Traversal/Impact] --> B
-        K[Visualizer] --> B
-    end
-    subgraph agents
-        L[MCP Server] --> discovery
-        L --> core
-    end
-    subgraph cli
-        M[Interactive Shell] --> discovery
-        M --> core
-    end
-```
-
-- **`saurix.core`**: Root indexing orchestration, graph models, and incremental caching.
-- **`saurix.analysis`**: Language-specific AST and Tree-sitter extractors.
-- **`saurix.discovery`**: Relationship discovery, search logic, and visualization generation.
-- **`saurix.agents.mcp`**: Tooling interface for AI agents.
-- **`saurix.infra`**: Centralized configuration and structured logging.
+Saurix follows a clean, domain-driven modular structure designed for scale and symbolic intelligence. For a detailed breakdown of how Saurix indexes, stores, and queries code, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
 ## Setup & Installation
 
-Choose the path that fits your workflow:
-
-### A) The "Power User" Path (Global & Project-Native)
-Recommended for using Saurix as a permanent tool for your own development projects.
-
-1. **Install Globally**:
+1. **Install Saurix**:
    ```bash
-   pip install -e .
+   pip install saurix
    ```
 2. **Initialize Any Project**:
    ```bash
@@ -81,20 +42,6 @@ Recommended for using Saurix as a permanent tool for your own development projec
    saurix init
    ```
    *This command indexes your project, creates a local 3D dashboard (`saurix.html`), and generates your MCP config in one step.*
-
-### B) The "Developer" Path (Standalone)
-Recommended if you want to contribute to Saurix or run it in isolation using `uv`.
-
-1. **Clone & Setup**:
-   ```bash
-   git clone https://github.com/anismabaziz/saurix.git
-   cd saurix
-   uv sync
-   ```
-2. **Run via uv**:
-   ```bash
-   uv run saurix
-   ```
 
 ### Running the MCP Server
 
@@ -151,13 +98,6 @@ You can test the MCP integration without a full IDE using the **MCP Inspector**:
 3. **Interact**: Open `http://localhost:5173`, click **Connect**, and use the **Call Tool** tab.
 
 For step-by-step setup (Claude Desktop, Cursor, OpenCode), simply run `saurix init` in your project folder.
-
-### Roadmap
-
-- [ ] **Rich Cross-Language Resolution**: Better linking across monorepos.
-- [ ] **LLM Integration**: Optional LLM-powered relationship refinement.
-- [ ] **Remote Store**: Support for remote graph databases (Neo4j/Memgraph).
-- [ ] **Dynamic Language Support**: Plug-and-play extractor modules.
 
 ---
 
