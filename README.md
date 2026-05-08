@@ -1,5 +1,10 @@
 # Saurix
 
+[![PyPI version](https://img.shields.io/pypi/v/saurix.svg)](https://pypi.org/project/saurix/)
+[![Python versions](https://img.shields.io/pypi/pyversions/saurix.svg)](https://pypi.org/project/saurix/)
+[![License: MIT](https://img.shields.io/pypi/l/saurix.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/pypi/dm/saurix.svg)](https://pypi.org/project/saurix/)
+
 Saurix is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
 
 ## Why Saurix for AI Agents?
