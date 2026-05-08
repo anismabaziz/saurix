@@ -40,7 +40,7 @@ def cmd_export(state: ShellState, rest: list[str]) -> None:
 
     fmt = rest[0].lower()
     if fmt == "graphml":
-        out = _parse_path_flag(rest, "--out", Path("tmp") / "code-atlas.graphml")
+        out = _parse_path_flag(rest, "--out", Path("tmp") / "saurix.graphml")
         state.ui.success(f"GraphML exported: {export_graphml(state.loaded_graph, out)}")
     elif fmt == "neo4j":
         out_dir = _parse_path_flag(rest, "--out", Path("tmp") / "neo4j")

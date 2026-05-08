@@ -187,19 +187,19 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
 def cmd_init(state: ShellState) -> None:
     """Smooth, zero-config onboarding for the current project."""
     ui = state.ui
-    ui.header("Initializing Code Atlas for this project...")
+    ui.header("Initializing Saurix for this project...")
     
     # 1. Index current directory
     cwd = Path.cwd()
     ui.info(f"Indexing: {cwd}")
-    cmd_index(state, [".", "--out", "code-atlas.graph.json"])
+    cmd_index(state, [".", "--out", "saurix.graph.json"])
     
     if not state.loaded_graph:
         ui.error("Indexing failed. Cannot proceed with initialization.")
         return
 
     # 2. Generate visualization
-    report_path = cwd / "atlas.html"
+    report_path = cwd / "saurix.html"
     ui.info(f"Generating dashboard: {report_path}")
     generate_visualization(state.loaded_graph, report_path)
     
@@ -213,9 +213,9 @@ def cmd_init(state: ShellState) -> None:
     ui.muted("\nFor Claude Desktop / Global MCP:")
     claude_config = {
         "mcpServers": {
-            "code-atlas": {
+            "saurix": {
                 "command": "uv",
-                "args": ["--directory", str(cwd), "run", "code-atlas-mcp"],
+                "args": ["--directory", str(cwd), "run", "saurix-mcp"],
             }
         }
     }
@@ -225,9 +225,9 @@ def cmd_init(state: ShellState) -> None:
     ui.muted("\nFor OpenCode (~/.opencode/config.json):")
     opencode_config = {
         "mcp": {
-            "code-atlas": {
+            "saurix": {
                 "type": "local",
-                "command": ["uv", "--directory", str(cwd), "run", "code-atlas-mcp"],
+                "command": ["uv", "--directory", str(cwd), "run", "saurix-mcp"],
                 "enabled": True
             }
         }
@@ -236,9 +236,9 @@ def cmd_init(state: ShellState) -> None:
 
     # 3. Cursor instructions
     ui.muted("\nFor Cursor (Settings -> Models -> MCP):")
-    ui.print(f"  Name: code-atlas")
+    ui.print(f"  Name: saurix")
     ui.print(f"  Type: command")
-    ui.print(f"  Command: uv --directory {cwd} run code-atlas-mcp")
+    ui.print(f"  Command: uv --directory {cwd} run saurix-mcp")
     ui.print()
     ui.info(f"Open [bold]{report_path}[/] in your browser to see the 3D map.")
 

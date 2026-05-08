@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-DEFAULT_GRAPH = Path("tmp") / "code-atlas.graph.json"
+DEFAULT_GRAPH = Path("tmp") / "saurix.graph.json"
 MAX_LIMIT = 500
 MAX_DEPTH = 20
 

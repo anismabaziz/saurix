@@ -1,4 +1,4 @@
-"""Code Atlas package."""
+"""Saurix package."""
 
 __all__ = ["__version__"]
 

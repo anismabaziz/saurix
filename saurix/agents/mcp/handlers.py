@@ -5,9 +5,9 @@ MCP Tool Handlers
 
 This module provides the core logic for the Model Context Protocol (MCP) server.
 Each function here corresponds to a specific 'tool' that an AI agent can call
-to interact with the Code Atlas knowledge graph.
+to interact with the Saurix knowledge graph.
 
-The handlers wrap Code Atlas core services (indexing, discovery) and provide
+The handlers wrap Saurix core services (indexing, discovery) and provide
 standardized ToolResult/ToolError responses that AI agents can easily consume.
 """
 

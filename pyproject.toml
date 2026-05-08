@@ -1,10 +1,10 @@
 [project]
-name = "code-atlas"
+name = "saurix"
 version = "0.1.0"
 description = "Interactive CLI that indexes polyglot repositories into a queryable knowledge graph for AI agents"
 readme = "README.md"
 authors = [
-    { name = "Anis B", email = "anismabaziz@gmail.com" }
+    { name = "Anis B", email = "anisbaziz.sub@gmail.com" }
 ]
 keywords = ["mcp", "knowledge-graph", "static-analysis", "ai-agents", "architecture"]
 classifiers = [
@@ -23,13 +23,13 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/anismabaziz/code-atlas"
-Repository = "https://github.com/anismabaziz/code-atlas"
-Issues = "https://github.com/anismabaziz/code-atlas/issues"
+Homepage = "https://github.com/anismabaziz/saurix"
+Repository = "https://github.com/anismabaziz/saurix"
+Issues = "https://github.com/anismabaziz/saurix/issues"
 
 [project.scripts]
-code-atlas = "code_atlas.cli:run"
-code-atlas-mcp = "code_atlas.agents.mcp:run"
+saurix = "saurix.cli:run"
+saurix-mcp = "saurix.agents.mcp:run"
 
 [build-system]
 requires = ["hatchling>=1.25.0"]

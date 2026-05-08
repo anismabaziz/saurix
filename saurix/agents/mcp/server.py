@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""MCP server setup and tool registration for Code Atlas."""
+"""MCP server setup and tool registration for Saurix."""
 
 from . import handlers
 
@@ -14,7 +14,7 @@ def create_server():
             "MCP SDK is not installed. Run `uv add mcp` or install project dependencies."
         ) from exc
 
-    app = FastMCP("code-atlas")
+    app = FastMCP("saurix")
 
     @app.tool()
     def index_repo(source: str, out: str | None = None) -> dict:
@@ -77,7 +77,7 @@ def create_server():
     def repo_onboarding() -> str:
         """A workflow to quickly understand a new repository's architecture."""
         return (
-            "You are an expert architect. First, check if a `code-atlas.graph.json` exists in the current directory. "
+            "You are an expert architect. First, check if a `saurix.graph.json` exists in the current directory. "
             "If not, use the `index_repo` tool with source='.' to create one. "
             "Once indexed, use the `stats` tool to get an overview of the repo's composition. "
             "Then, use `find_symbol` to identify the main entry points or core classes, "
@@ -89,7 +89,7 @@ def create_server():
         """A workflow to assess the risk of changing a specific symbol."""
         return (
             f"I want to modify the symbol: {symbol}. "
-            f"1. Use code-atlas `impact_of_symbol` with depth 2 to find everything that might break. "
+            f"1. Use saurix `impact_of_symbol` with depth 2 to find everything that might break. "
             f"2. Use `related_files` to find which files I should check for regressions. "
             "3. Provide a summary of the 'Blast Radius' and a recommended testing strategy."
         )

@@ -10,7 +10,7 @@ from .models import Edge, Node
 
 
 CACHE_VERSION = 1
-DEFAULT_CACHE_PATH = Path("tmp") / "code-atlas.cache.json"
+DEFAULT_CACHE_PATH = Path("tmp") / "saurix.cache.json"
 EXTRACTOR_VERSIONS = {
     "python": "2",
     "typescript": "2",

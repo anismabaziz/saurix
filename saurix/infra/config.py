@@ -7,12 +7,12 @@ from pathlib import Path
 
 @dataclass
 class AtlasConfig:
-    """Central configuration for Code Atlas."""
+    """Central configuration for Saurix."""
     
     # Default paths
-    app_data_dir: Path = field(default_factory=lambda: Path(os.getenv("CODE_ATLAS_DATA_DIR", "~/.code-atlas")).expanduser())
-    default_graph_name: str = "code-atlas.graph.json"
-    default_cache_name: str = "code-atlas.cache.json"
+    app_data_dir: Path = field(default_factory=lambda: Path(os.getenv("CODE_ATLAS_DATA_DIR", "~/.saurix")).expanduser())
+    default_graph_name: str = "saurix.graph.json"
+    default_cache_name: str = "saurix.cache.json"
     
     # Indexing settings
     exclude_dirs: set[str] = field(default_factory=lambda: {

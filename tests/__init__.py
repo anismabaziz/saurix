@@ -1,1 +1,1 @@
-"""Code Atlas test suite."""
+"""Saurix test suite."""

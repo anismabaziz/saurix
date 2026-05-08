@@ -55,7 +55,7 @@ def prepare_repo_source(source: str):
         )
 
     clone_url, slug = normalize_github_clone_url(source)
-    tmp_root = Path(tempfile.mkdtemp(prefix="code-atlas-"))
+    tmp_root = Path(tempfile.mkdtemp(prefix="saurix-"))
     clone_target = tmp_root / "repo"
 
     logger.info(f"Cloning GitHub repository: {slug}")

@@ -24,7 +24,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Atlas Visualization</title>
+    <title>Saurix Visualization</title>
     <script src="https://unpkg.com/force-graph"></script>
     <script src="https://unpkg.com/3d-force-graph"></script>
     <style>
@@ -105,7 +105,7 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="control-panel">
-        <h2>Code Atlas</h2>
+        <h2>Saurix</h2>
         
         <div class="search-box">
             <input type="text" id="search" class="search-input" placeholder="Search symbols..." oninput="handleSearch(this.value)">

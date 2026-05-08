@@ -1,10 +1,10 @@
-# Code Atlas
+# Saurix
 
-Code Atlas is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
+Saurix is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
 
-## Why Code Atlas for AI Agents?
+## Why Saurix for AI Agents?
 
-Code Atlas solves the "Context Window" problem for LLMs by providing a structured representation of code that is superior to keyword search:
+Saurix solves the "Context Window" problem for LLMs by providing a structured representation of code that is superior to keyword search:
 
 - **Structural Awareness**: Understands `CALLS`, `INHERITS`, and `IMPORTS` relationships rather than just raw text.
 - **Context Efficiency**: Agents can query specific subgraphs, receiving only the architectural context they need, drastically reducing token usage.
@@ -26,7 +26,7 @@ See [docs/agent-lifecycle.md](docs/agent-lifecycle.md) for a step-by-step walkth
 
 ## 2) Architecture
 
-Code Atlas follows a clean, domain-driven modular structure:
+Saurix follows a clean, domain-driven modular structure:
 
 ```mermaid
 flowchart TD
@@ -56,11 +56,11 @@ flowchart TD
     end
 ```
 
-- **`code_atlas.core`**: Root indexing orchestration, graph models, and incremental caching.
-- **`code_atlas.analysis`**: Language-specific AST and Tree-sitter extractors.
-- **`code_atlas.discovery`**: Relationship discovery, search logic, and visualization generation.
-- **`code_atlas.agents.mcp`**: Tooling interface for AI agents.
-- **`code_atlas.infra`**: Centralized configuration and structured logging.
+- **`saurix.core`**: Root indexing orchestration, graph models, and incremental caching.
+- **`saurix.analysis`**: Language-specific AST and Tree-sitter extractors.
+- **`saurix.discovery`**: Relationship discovery, search logic, and visualization generation.
+- **`saurix.agents.mcp`**: Tooling interface for AI agents.
+- **`saurix.infra`**: Centralized configuration and structured logging.
 
 ---
 
@@ -69,7 +69,7 @@ flowchart TD
 Choose the path that fits your workflow:
 
 ### A) The "Power User" Path (Global & Project-Native)
-Recommended for using Code Atlas as a permanent tool for your own development projects.
+Recommended for using Saurix as a permanent tool for your own development projects.
 
 1. **Install Globally**:
    ```bash
@@ -78,22 +78,22 @@ Recommended for using Code Atlas as a permanent tool for your own development pr
 2. **Initialize Any Project**:
    ```bash
    cd /path/to/your/project
-   code-atlas init
+   saurix init
    ```
-   *This command indexes your project, creates a local 3D dashboard (`atlas.html`), and generates your MCP config in one step.*
+   *This command indexes your project, creates a local 3D dashboard (`saurix.html`), and generates your MCP config in one step.*
 
 ### B) The "Developer" Path (Standalone)
-Recommended if you want to contribute to Code Atlas or run it in isolation using `uv`.
+Recommended if you want to contribute to Saurix or run it in isolation using `uv`.
 
 1. **Clone & Setup**:
    ```bash
-   git clone https://github.com/anismabaziz/code-atlas.git
-   cd code-atlas
+   git clone https://github.com/anismabaziz/saurix.git
+   cd saurix
    uv sync
    ```
 2. **Run via uv**:
    ```bash
-   uv run code-atlas
+   uv run saurix
    ```
 
 ### Running the MCP Server
@@ -101,7 +101,7 @@ Recommended if you want to contribute to Code Atlas or run it in isolation using
 Expose graph tools to AI agents (e.g., Claude Desktop, Cursor):
 
 ```bash
-code-atlas-mcp
+saurix-mcp
 ```
 
 ---
@@ -124,13 +124,13 @@ code-atlas-mcp
 
 ## 5) AI Agent Integration (MCP)
 
-Code Atlas is optimized for agentic workflows. It exposes tools that help agents understand:
+Saurix is optimized for agentic workflows. It exposes tools that help agents understand:
 
 1. **Context Discovery**: `find_symbol` and `related_files`.
 2. **Behavioral Mapping**: `callers` and `path_between`.
 3. **Risk Assessment**: `impact_of_symbol`.
 
-Configure your agent with the `code-atlas-mcp` entry point. Once configured, the AI client (e.g., Claude Desktop) will automatically manage the server lifecycle—starting it in the background when needed and stopping it when the app closes. No manual terminal execution is required.
+Configure your agent with the `saurix-mcp` entry point. Once configured, the AI client (e.g., Claude Desktop) will automatically manage the server lifecycle—starting it in the background when needed and stopping it when the app closes. No manual terminal execution is required.
 
 ---
 
@@ -147,10 +147,10 @@ uv run pytest
 You can test the MCP integration without a full IDE using the **MCP Inspector**:
 
 1. **Install the Inspector**: `npm install -g @modelcontextprotocol/inspector`
-2. **Run the Server**: `npx @modelcontextprotocol/inspector uv run code-atlas-mcp`
+2. **Run the Server**: `npx @modelcontextprotocol/inspector uv run saurix-mcp`
 3. **Interact**: Open `http://localhost:5173`, click **Connect**, and use the **Call Tool** tab.
 
-For step-by-step setup (Claude Desktop, Cursor, OpenCode), simply run `code-atlas init` in your project folder.
+For step-by-step setup (Claude Desktop, Cursor, OpenCode), simply run `saurix init` in your project folder.
 
 ### Roadmap
 
@@ -161,4 +161,4 @@ For step-by-step setup (Claude Desktop, Cursor, OpenCode), simply run `code-atla
 
 ---
 
-_Code Atlas is built for the era of autonomous coding._
+_Saurix is built for the era of autonomous coding._

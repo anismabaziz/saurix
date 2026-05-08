@@ -3,7 +3,7 @@ from __future__ import annotations
 """
 CLI Application Shell
 
-This module implements the interactive REPL (Read-Eval-Print Loop) for Code Atlas.
+This module implements the interactive REPL (Read-Eval-Print Loop) for Saurix.
 It handles user input, parses commands using shlex (to support quoted paths/names),
 and dispatches them to their respective implementations in commands.py and extra_commands.py.
 """
@@ -112,7 +112,7 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
 
 def build_parser() -> argparse.ArgumentParser:
     """Configures the command-line argument parser for the atlas entrypoint."""
-    parser = argparse.ArgumentParser(prog="code-atlas", description="Knowledge graph CLI for AI code exploration.")
+    parser = argparse.ArgumentParser(prog="saurix", description="Knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     # We use parse_known_args to allow trailing commands
     return parser
@@ -131,7 +131,7 @@ def run(argv: list[str] | None = None) -> int:
     graph_path = Path(args.graph).resolve()
     state = create_state(graph_path, ui)
     
-    # If one-shot command was provided (e.g. code-atlas init)
+    # If one-shot command was provided (e.g. saurix init)
     if remaining:
         dispatch_command(state, " ".join(remaining))
         return 0
@@ -154,7 +154,7 @@ def run(argv: list[str] | None = None) -> int:
 
 
 def _render_banner(ui: UI) -> None:
-    """Displays the Code Atlas ASCII logo and initialization message."""
+    """Displays the Saurix ASCII logo and initialization message."""
     ui.print(f"[bold cyan]{ASCII_LOGO}[/]")
-    ui.header("Code Atlas Interactive")
+    ui.header("Saurix Interactive")
     ui.muted("Type 'help' to list commands.")

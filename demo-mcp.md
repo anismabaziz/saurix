@@ -1,11 +1,11 @@
-# MCP Demo (Code Atlas)
+# MCP Demo (Saurix)
 
 This demo shows a simple MCP workflow with 5 tool calls and expected response shapes.
 
 ## Prerequisites
 
 - Run `uv sync`
-- Start MCP server: `code-atlas-mcp`
+- Start MCP server: `saurix-mcp`
 
 ## 1) Index a repo
 
@@ -15,7 +15,7 @@ Tool call:
 {
   "tool": "index_repo",
   "arguments": {
-    "source": "https://github.com/anismabaziz/code-atlas"
+    "source": "https://github.com/anismabaziz/saurix"
   }
 }
 ```
@@ -26,8 +26,8 @@ Expected response shape:
 {
   "ok": true,
   "data": {
-    "graph_path": ".../tmp/code-atlas.graph.json",
-    "source_kind": "github:anismabaziz/code-atlas",
+    "graph_path": ".../tmp/saurix.graph.json",
+    "source_kind": "github:anismabaziz/saurix",
     "scanned_files": 30,
     "indexed_files": 30,
     "stats": { "nodes": 0, "edges": 0 }
@@ -44,7 +44,7 @@ Tool call:
 {
   "tool": "stats",
   "arguments": {
-    "graph": "tmp/code-atlas.graph.json"
+    "graph": "tmp/saurix.graph.json"
   }
 }
 ```
@@ -63,7 +63,7 @@ Tool call:
 {
   "tool": "find_symbol",
   "arguments": {
-    "graph": "tmp/code-atlas.graph.json",
+    "graph": "tmp/saurix.graph.json",
     "query": "find_symbol",
     "limit": 10
   }
@@ -77,10 +77,10 @@ Expected response:
   "ok": true,
   "data": [
     {
-      "id": "python://code_atlas.query.basic:find_symbol",
+      "id": "python://saurix.query.basic:find_symbol",
       "type": "function",
       "name": "find_symbol",
-      "file": "code_atlas/query/basic.py"
+      "file": "saurix/query/basic.py"
     }
   ],
   "meta": { "count": 1, "duration_ms": 0 }
@@ -95,9 +95,9 @@ Tool call:
 {
   "tool": "path_between",
   "arguments": {
-    "graph": "tmp/code-atlas.graph.json",
-    "source": "python://code_atlas.cli.commands:cmd_find",
-    "target": "python://code_atlas.query.basic:find_symbol",
+    "graph": "tmp/saurix.graph.json",
+    "source": "python://saurix.cli.commands:cmd_find",
+    "target": "python://saurix.query.basic:find_symbol",
     "max_depth": 12
   }
 }
@@ -116,8 +116,8 @@ Tool call:
 {
   "tool": "impact_of_symbol",
   "arguments": {
-    "graph": "tmp/code-atlas.graph.json",
-    "symbol": "python://code_atlas.query.basic:find_symbol",
+    "graph": "tmp/saurix.graph.json",
+    "symbol": "python://saurix.query.basic:find_symbol",
     "depth": 3,
     "limit": 50
   }

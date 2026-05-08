@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
-from code_atlas.core.cache import DEFAULT_CACHE_PATH
-from code_atlas.core.indexing import build_graph
+from saurix.core.cache import DEFAULT_CACHE_PATH
+from saurix.core.indexing import build_graph
 
 
 @dataclass
@@ -86,7 +86,7 @@ def clear_repo_cache(repo_root: Path) -> None:
     cache_file = repo_root / DEFAULT_CACHE_PATH
     if cache_file.exists():
         cache_file.unlink()
-    bench_graph = repo_root / "tmp" / "code-atlas.graph.json"
+    bench_graph = repo_root / "tmp" / "saurix.graph.json"
     if bench_graph.exists():
         bench_graph.unlink()
     bench_tmp = repo_root / "tmp" / "bench"

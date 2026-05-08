@@ -4,7 +4,7 @@ from __future__ import annotations
 Graph Storage Module
 
 This module defines the GraphStore class, which serves as the central data structure
-for the Code Atlas knowledge graph. It manages nodes, edges, and their metadata,
+for the Saurix knowledge graph. It manages nodes, edges, and their metadata,
 providing efficient indexing for graph traversal and analysis.
 """
 

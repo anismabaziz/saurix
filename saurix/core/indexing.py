@@ -3,7 +3,7 @@ from __future__ import annotations
 """
 Indexing Orchestration Module
 
-This module is the heart of Code Atlas's indexing engine. It defines the RepositoryIndexer
+This module is the heart of Saurix's indexing engine. It defines the RepositoryIndexer
 class, which manages the lifecycle of repository scanning, file language detection,
 incremental caching, and dispatching work to language-specific extractors.
 """

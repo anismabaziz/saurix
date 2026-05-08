@@ -5,7 +5,7 @@ Add your screenshots/GIF here and keep these filenames for README references:
 - `cli-workflow.png`
 - `visual-workflow.png`
 - `mcp-workflow.png`
-- `code-atlas-demo.gif`
+- `saurix-demo.gif`
 
 Suggested capture flow:
 
