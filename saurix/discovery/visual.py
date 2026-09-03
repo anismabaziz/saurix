@@ -10,10 +10,11 @@ search highlighting and tooltips.
 import json
 from pathlib import Path
 
-from ..core.graph import GraphStore
-from ..infra.logging import get_logger
+import logging
 
-logger = get_logger(__name__)
+from ..core.graph import GraphStore
+
+logger = logging.getLogger(__name__)
 
 
 def _load_template() -> str:

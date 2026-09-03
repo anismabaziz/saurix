@@ -12,12 +12,11 @@ import logging
 from pathlib import Path
 from collections.abc import Callable
 
+from .config import config
 from .graph import GraphStore
 from .models import Node
-from ..infra.config import config
-from ..infra.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Map file extensions to language identifiers used for extractor dispatch
 # Only languages with real Extractors are listed; others are skipped

@@ -7,9 +7,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from ..infra.logging import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 _GITHUB_HOSTS = {"github.com", "www.github.com"}
 

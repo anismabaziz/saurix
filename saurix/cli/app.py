@@ -15,8 +15,8 @@ from pathlib import Path
 
 from .commands import ShellState, cmd_callees, cmd_callers, cmd_export, cmd_find, cmd_impact, cmd_index, cmd_init, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_visual, cmd_where
 from .ui import ASCII_LOGO, UI, clear_screen, interactive_help
+from ..core.config import config
 from ..core.graph import GraphStore
-from ..infra.config import config
 
 
 # Default location for the graph file, pulled from centralized config
@@ -107,7 +107,7 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Configures the command-line argument parser for the atlas entrypoint."""
+    """Configures the command-line argument parser for the saurix entrypoint."""
     parser = argparse.ArgumentParser(prog="saurix", description="Knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     # We use parse_known_args to allow trailing commands
