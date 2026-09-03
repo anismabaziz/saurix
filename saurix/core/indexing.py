@@ -22,27 +22,16 @@ from ..infra.logging import get_logger
 logger = get_logger(__name__)
 
 # Map file extensions to language identifiers used for extractor dispatch
+# Only languages with real Extractors are listed; others are skipped
 LANGUAGE_BY_EXTENSION = {
     ".py": "python",
-    ".js": "javascript",
-    ".mjs": "javascript",
-    ".cjs": "javascript",
+    ".js": "typescript",
+    ".mjs": "typescript",
+    ".cjs": "typescript",
     ".ts": "typescript",
     ".tsx": "typescript",
     ".java": "java",
     ".go": "go",
-    ".rs": "rust",
-    ".rb": "ruby",
-    ".php": "php",
-    ".cs": "csharp",
-    ".cpp": "cpp",
-    ".cc": "cpp",
-    ".cxx": "cpp",
-    ".c": "c",
-    ".h": "c",
-    ".hpp": "cpp",
-    ".kt": "kotlin",
-    ".swift": "swift",
 }
 
 
@@ -158,12 +147,12 @@ class RepositoryIndexer:
             files_by_language[lang] = files_by_language.get(lang, 0) + 1
 
             extractor = self.extractors.get(lang)
-            parser_mode = "stub"
-            if extractor is not None:
-                # Identify which parsing strategy is actually being used
-                parser_mode = "ast" if lang == "python" else (
-                    "tree-sitter" if getattr(extractor, "_parser", None) else "regex-fallback"
-                )
+            if extractor is None:
+                continue
+            # Identify which parsing strategy is actually being used
+            parser_mode = "ast" if lang == "python" else (
+                "tree-sitter" if getattr(extractor, "_parser", None) else "regex-fallback"
+            )
             
             cached = cached_files.get(rel)
             fingerprint = file_hash(file_path)
@@ -191,42 +180,28 @@ class RepositoryIndexer:
 
             # Cache miss: we need to run the full extraction for this file
             changed_files += 1
-            if extractor is not None:
-                temp_graph = GraphStore()
-                try:
-                    extractor.extract(repo_root=self.root, file_path=file_path, graph=temp_graph)
-                    # Merge temp graph into main graph
-                    for node in temp_graph.nodes.values():
-                        self.graph.add_node(node)
-                    for edge in temp_graph.edges:
-                        self.graph.add_edge(edge)
+            temp_graph = GraphStore()
+            try:
+                extractor.extract(repo_root=self.root, file_path=file_path, graph=temp_graph)
+                # Merge temp graph into main graph
+                for node in temp_graph.nodes.values():
+                    self.graph.add_node(node)
+                for edge in temp_graph.edges:
+                    self.graph.add_edge(edge)
 
-                    # Update cache entry for this file
-                    next_cache_files[rel] = serialize_contribution(
-                        list(temp_graph.nodes.values()),
-                        list(temp_graph.edges),
-                        lang=lang,
-                        fingerprint=fingerprint,
-                        parser_mode=parser_mode,
-                    )
-                    indexed += 1
-                    indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
-                    parser_mode_by_language[lang] = parser_mode
-                except Exception as e:
-                    logger.error(f"Failed to extract {rel}: {e}")
-            else:
-                # Use a lightweight fallback for languages without dedicated extractors
-                from ..analysis.stub_extractor import StubExtractor
-
-                StubExtractor(lang).extract(repo_root=self.root, file_path=file_path, graph=self.graph)
-                nodes = [n for n in self.graph.nodes.values() if n.file == rel]
-                edges = [e for e in self.graph.edges if e.file == rel]
+                # Update cache entry for this file
                 next_cache_files[rel] = serialize_contribution(
-                    nodes, edges, lang=lang, fingerprint=fingerprint, parser_mode="stub"
+                    list(temp_graph.nodes.values()),
+                    list(temp_graph.edges),
+                    lang=lang,
+                    fingerprint=fingerprint,
+                    parser_mode=parser_mode,
                 )
                 indexed += 1
                 indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
-                parser_mode_by_language[lang] = "stub"
+                parser_mode_by_language[lang] = parser_mode
+            except Exception as e:
+                logger.error(f"Failed to extract {rel}: {e}")
 
             if self.on_progress:
                 self.on_progress(i + 1, total_files, rel)
