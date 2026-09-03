@@ -1,19 +1,27 @@
-from __future__ import annotations
+"""
+TypeScript extractor using Tree-sitter with regex fallback.
+"""
 
-"""TypeScript extractor using Tree-sitter with regex fallback."""
+from __future__ import annotations
 
 import re
 from pathlib import Path
 from typing import Any
 
 from ..core.graph import GraphStore
-from ..core.models import Edge
-from .common import add_calls_edge, add_contains_edge, add_import_edge, add_node
+from ..core.models import Edge, Node
+from .base import Extractor
 from .regex_lang import RegexLangExtractor
-from .tree_sitter_support import find_first_desc, get_parser, stripped_string, text_of, walk
+from .tree_sitter_support import (
+    find_first_desc,
+    get_parser,
+    stripped_string,
+    text_of,
+    walk,
+)
 
 
-class TypeScriptExtractor:
+class TypeScriptExtractor(Extractor):
     language = "typescript"
 
     def __init__(self) -> None:
@@ -32,9 +40,13 @@ class TypeScriptExtractor:
         self._parser = get_parser("typescript")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
-        """Extract module/import/function/call relationships from TS files."""
+        """
+        Extract module/import/function/call relationships from TS files.
+        """
         if self._parser is None:
-            self._fallback.extract(repo_root=repo_root, file_path=file_path, graph=graph)
+            self._fallback.extract(
+                repo_root=repo_root, file_path=file_path, graph=graph
+            )
             return
 
         rel = file_path.relative_to(repo_root).as_posix()
@@ -44,7 +56,16 @@ class TypeScriptExtractor:
 
         module_name = rel.rsplit(".", 1)[0].replace("/", ".")
         module_id = f"typescript://{module_name}"
-        add_node(graph, node_id=module_id, node_type="module", language=self.language, name=module_name, file=rel, line=1)
+        graph.add_node(
+            Node(
+                id=module_id,
+                type="module",
+                language=self.language,
+                name=module_name,
+                file=rel,
+                line=1,
+            )
+        )
 
         # Track all local symbols (functions, classes, methods)
         local_symbols: dict[str, str] = {}
@@ -59,16 +80,39 @@ class TypeScriptExtractor:
 
         # Second pass: extract declarations
         for node in walk(root):
-            self._extract_function_like(node, source, graph, module_id, rel, local_symbols)
-            self._extract_class(node, source, graph, module_id, rel, local_symbols, class_members)
+            self._extract_function_like(
+                node, source, graph, module_id, rel, local_symbols
+            )
+            self._extract_class(
+                node, source, graph, module_id, rel, local_symbols, class_members
+            )
             self._extract_interface(node, source, graph, module_id, rel, local_symbols)
 
         # Third pass: extract calls
         for node in walk(root):
-            self._extract_calls(node, source, graph, module_id, rel, local_symbols, class_members, imports)
+            self._extract_calls(
+                node,
+                source,
+                graph,
+                module_id,
+                rel,
+                local_symbols,
+                class_members,
+                imports,
+            )
 
-    def _extract_import(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, imports: dict[str, str]) -> None:
-        """Extract one import edge from a TS import statement node."""
+    def _extract_import(
+        self,
+        node,
+        source: bytes,
+        graph: GraphStore,
+        module_id: str,
+        rel: str,
+        imports: dict[str, str],
+    ) -> None:
+        """
+        Extract one import edge from a TS import statement node.
+        """
         if node.type != "import_statement":
             return
 
@@ -80,7 +124,9 @@ class TypeScriptExtractor:
             if named_imports:
                 for child in getattr(named_imports, "children", []):
                     if child.type == "import_specifier":
-                        ident = find_first_desc(child, {"identifier", "type_identifier"})
+                        ident = find_first_desc(
+                            child, {"identifier", "type_identifier"}
+                        )
                         if ident:
                             name = text_of(source, ident).strip()
                             # Check for alias: import { foo as bar }
@@ -95,13 +141,34 @@ class TypeScriptExtractor:
                             if string_node:
                                 target = stripped_string(source, string_node)
                                 if target:
-                                    target_id = f"typescript://{target.replace('/', '.')}"
-                                    add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-                                    add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
+                                    target_id = (
+                                        f"typescript://{target.replace('/', '.')}"
+                                    )
+                                    graph.add_node(
+                                        Node(
+                                            id=target_id,
+                                            type="module",
+                                            language=self.language,
+                                            name=target,
+                                        )
+                                    )
+                                    graph.add_edge(
+                                        Edge(
+                                            type="IMPORTS",
+                                            source=module_id,
+                                            target=target_id,
+                                            language=self.language,
+                                            confidence="high",
+                                            file=rel,
+                                            line=node.start_point[0] + 1,
+                                        )
+                                    )
                                     imports[local_name] = target_id
             else:
                 # Default import: import foo from "module"
-                ident = find_first_desc(import_clause, {"identifier", "type_identifier"})
+                ident = find_first_desc(
+                    import_clause, {"identifier", "type_identifier"}
+                )
                 if ident:
                     name = text_of(source, ident).strip()
                     string_node = find_first_desc(node, {"string"})
@@ -109,8 +176,25 @@ class TypeScriptExtractor:
                         target = stripped_string(source, string_node)
                         if target:
                             target_id = f"typescript://{target.replace('/', '.')}"
-                            add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-                            add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
+                            graph.add_node(
+                                Node(
+                                    id=target_id,
+                                    type="module",
+                                    language=self.language,
+                                    name=target,
+                                )
+                            )
+                            graph.add_edge(
+                                Edge(
+                                    type="IMPORTS",
+                                    source=module_id,
+                                    target=target_id,
+                                    language=self.language,
+                                    confidence="high",
+                                    file=rel,
+                                    line=node.start_point[0] + 1,
+                                )
+                            )
                             imports[name] = target_id
             return
 
@@ -125,8 +209,25 @@ class TypeScriptExtractor:
                     target = stripped_string(source, string_node)
                     if target:
                         target_id = f"typescript://{target.replace('/', '.')}"
-                        add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-                        add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
+                        graph.add_node(
+                            Node(
+                                id=target_id,
+                                type="module",
+                                language=self.language,
+                                name=target,
+                            )
+                        )
+                        graph.add_edge(
+                            Edge(
+                                type="IMPORTS",
+                                source=module_id,
+                                target=target_id,
+                                language=self.language,
+                                confidence="high",
+                                file=rel,
+                                line=node.start_point[0] + 1,
+                            )
+                        )
                         imports[name] = target_id
             return
 
@@ -136,17 +237,43 @@ class TypeScriptExtractor:
             target = stripped_string(source, s)
             if target:
                 target_id = f"typescript://{target.replace('/', '.')}"
-                add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-                add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
+                graph.add_node(
+                    Node(
+                        id=target_id, type="module", language=self.language, name=target
+                    )
+                )
+                graph.add_edge(
+                    Edge(
+                        type="IMPORTS",
+                        source=module_id,
+                        target=target_id,
+                        language=self.language,
+                        confidence="high",
+                        file=rel,
+                        line=node.start_point[0] + 1,
+                    )
+                )
 
-    def _extract_function_like(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, local_symbols: dict[str, str]) -> None:
-        """Extract function declarations and arrow-function variable bindings."""
+    def _extract_function_like(
+        self,
+        node,
+        source: bytes,
+        graph: GraphStore,
+        module_id: str,
+        rel: str,
+        local_symbols: dict[str, str],
+    ) -> None:
+        """
+        Extract function declarations and arrow-function variable bindings.
+        """
         if node.type == "function_declaration":
             ident = find_first_desc(node, {"identifier"})
             if ident is None:
                 return
             name = text_of(source, ident).strip()
-            self._register_symbol(graph, module_id, rel, local_symbols, name, node.start_point[0] + 1)
+            self._register_symbol(
+                graph, module_id, rel, local_symbols, name, node.start_point[0] + 1
+            )
             return
 
         if node.type in {"lexical_declaration", "variable_declaration"}:
@@ -158,7 +285,14 @@ class TypeScriptExtractor:
                 function = find_first_desc(child, {"function"})
                 if ident and (arrow or function):
                     name = text_of(source, ident).strip()
-                    self._register_symbol(graph, module_id, rel, local_symbols, name, child.start_point[0] + 1)
+                    self._register_symbol(
+                        graph,
+                        module_id,
+                        rel,
+                        local_symbols,
+                        name,
+                        child.start_point[0] + 1,
+                    )
 
     def _extract_class(
         self,
@@ -170,7 +304,9 @@ class TypeScriptExtractor:
         local_symbols: dict[str, str],
         class_members: dict[str, dict[str, str]],
     ) -> None:
-        """Extract class declarations and their methods."""
+        """
+        Extract class declarations and their methods.
+        """
         if node.type not in {"class_declaration", "class"}:
             return
 
@@ -187,8 +323,27 @@ class TypeScriptExtractor:
         local_symbols[class_name] = class_id
         class_members[class_name] = {}
 
-        add_node(graph, node_id=class_id, node_type="class", language=self.language, name=class_name, file=rel, line=node.start_point[0] + 1)
-        add_contains_edge(graph, language=self.language, source=module_id, target=class_id, file=rel, line=node.start_point[0] + 1)
+        graph.add_node(
+            Node(
+                id=class_id,
+                type="class",
+                language=self.language,
+                name=class_name,
+                file=rel,
+                line=node.start_point[0] + 1,
+            )
+        )
+        graph.add_edge(
+            Edge(
+                type="CONTAINS",
+                source=module_id,
+                target=class_id,
+                language=self.language,
+                confidence="high",
+                file=rel,
+                line=node.start_point[0] + 1,
+            )
+        )
 
         # Extract inheritance
         for child in getattr(node, "children", []):
@@ -197,27 +352,81 @@ class TypeScriptExtractor:
                 if parent:
                     parent_name = text_of(source, parent).strip()
                     parent_id = f"typescript://{parent_name}"  # Best effort resolution
-                    add_node(graph, node_id=parent_id, node_type="class", language=self.language, name=parent_name)
-                    graph.add_edge(Edge(type="INHERITS", source=class_id, target=parent_id, language=self.language, confidence="medium", file=rel, line=child.start_point[0] + 1))
+                    graph.add_node(
+                        Node(
+                            id=parent_id,
+                            type="class",
+                            language=self.language,
+                            name=parent_name,
+                        )
+                    )
+                    graph.add_edge(
+                        Edge(
+                            type="INHERITS",
+                            source=class_id,
+                            target=parent_id,
+                            language=self.language,
+                            confidence="medium",
+                            file=rel,
+                            line=child.start_point[0] + 1,
+                        )
+                    )
 
         # Extract class body members
         class_body = find_first_desc(node, {"class_body"})
         if class_body:
             for member in getattr(class_body, "children", []):
                 if member.type in {"method_definition", "public_field_definition"}:
-                    member_ident = find_first_desc(member, {"property_identifier", "identifier"})
+                    member_ident = find_first_desc(
+                        member, {"property_identifier", "identifier"}
+                    )
                     if member_ident:
                         member_name = text_of(source, member_ident).strip()
-                        member_type = "method" if member.type == "method_definition" else "property"
+                        member_type = (
+                            "method"
+                            if member.type == "method_definition"
+                            else "property"
+                        )
                         member_id = f"{class_id}.{member_name}"
                         class_members[class_name][member_name] = member_id
-                        local_symbols[member_name] = member_id  # Also add to local symbols for simple resolution
+                        local_symbols[member_name] = (
+                            member_id  # Also add to local symbols for simple resolution
+                        )
 
-                        add_node(graph, node_id=member_id, node_type=member_type, language=self.language, name=member_name, file=rel, line=member.start_point[0] + 1)
-                        add_contains_edge(graph, language=self.language, source=class_id, target=member_id, file=rel, line=member.start_point[0] + 1)
+                        graph.add_node(
+                            Node(
+                                id=member_id,
+                                type=member_type,
+                                language=self.language,
+                                name=member_name,
+                                file=rel,
+                                line=member.start_point[0] + 1,
+                            )
+                        )
+                        graph.add_edge(
+                            Edge(
+                                type="CONTAINS",
+                                source=class_id,
+                                target=member_id,
+                                language=self.language,
+                                confidence="high",
+                                file=rel,
+                                line=member.start_point[0] + 1,
+                            )
+                        )
 
-    def _extract_interface(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, local_symbols: dict[str, str]) -> None:
-        """Extract interface declarations."""
+    def _extract_interface(
+        self,
+        node,
+        source: bytes,
+        graph: GraphStore,
+        module_id: str,
+        rel: str,
+        local_symbols: dict[str, str],
+    ) -> None:
+        """
+        Extract interface declarations.
+        """
         if node.type != "interface_declaration":
             return
 
@@ -232,8 +441,27 @@ class TypeScriptExtractor:
         interface_id = f"{module_id}:{name}"
         local_symbols[name] = interface_id
 
-        add_node(graph, node_id=interface_id, node_type="interface", language=self.language, name=name, file=rel, line=node.start_point[0] + 1)
-        add_contains_edge(graph, language=self.language, source=module_id, target=interface_id, file=rel, line=node.start_point[0] + 1)
+        graph.add_node(
+            Node(
+                id=interface_id,
+                type="interface",
+                language=self.language,
+                name=name,
+                file=rel,
+                line=node.start_point[0] + 1,
+            )
+        )
+        graph.add_edge(
+            Edge(
+                type="CONTAINS",
+                source=module_id,
+                target=interface_id,
+                language=self.language,
+                confidence="high",
+                file=rel,
+                line=node.start_point[0] + 1,
+            )
+        )
 
     def _extract_calls(
         self,
@@ -246,7 +474,9 @@ class TypeScriptExtractor:
         class_members: dict[str, dict[str, str]],
         imports: dict[str, str],
     ) -> None:
-        """Extract call expressions with improved resolution."""
+        """
+        Extract call expressions with improved resolution.
+        """
         if node.type != "call_expression":
             return
 
@@ -294,7 +524,10 @@ class TypeScriptExtractor:
                         obj_id = local_symbols[obj_name]
                         if obj_id in [f"{module_id}:{cn}" for cn in class_members]:
                             class_name = obj_id.split(":")[-1]
-                            if class_name in class_members and method_name in class_members[class_name]:
+                            if (
+                                class_name in class_members
+                                and method_name in class_members[class_name]
+                            ):
                                 target_id = class_members[class_name][method_name]
                                 confidence = "high"
 
@@ -308,17 +541,28 @@ class TypeScriptExtractor:
 
         if target_id:
             # Find the enclosing function/class as the caller
-            caller_id = self._find_enclosing_scope(node, source, module_id, local_symbols, class_members)
+            caller_id = self._find_enclosing_scope(
+                node, source, module_id, local_symbols, class_members
+            )
 
-            add_node(graph, node_id=target_id, node_type="symbol", language=self.language, name=target_id.split(":")[-1].split(".")[-1])
-            add_calls_edge(
-                graph,
-                language=self.language,
-                source=caller_id,
-                target=target_id,
-                file=rel,
-                line=node.start_point[0] + 1,
-                confidence=confidence,
+            graph.add_node(
+                Node(
+                    id=target_id,
+                    type="symbol",
+                    language=self.language,
+                    name=target_id.split(":")[-1].split(".")[-1],
+                )
+            )
+            graph.add_edge(
+                Edge(
+                    type="CALLS",
+                    source=caller_id,
+                    target=target_id,
+                    language=self.language,
+                    confidence=confidence,
+                    file=rel,
+                    line=node.start_point[0] + 1,
+                )
             )
 
     def _find_enclosing_scope(
@@ -329,10 +573,16 @@ class TypeScriptExtractor:
         local_symbols: dict[str, str],
         class_members: dict[str, dict[str, str]],
     ) -> str:
-        """Find the enclosing function or class for a node."""
+        """
+        Find the enclosing function or class for a node.
+        """
         current = node
         while current:
-            if current.type in {"function_declaration", "method_definition", "arrow_function"}:
+            if current.type in {
+                "function_declaration",
+                "method_definition",
+                "arrow_function",
+            }:
                 ident = find_first_desc(current, {"identifier", "property_identifier"})
                 if ident:
                     name = text_of(source, ident).strip()
@@ -356,10 +606,31 @@ class TypeScriptExtractor:
         name: str,
         line: int,
     ) -> None:
-        """Create function node and containment edge for discovered symbol."""
+        """
+        Create function node and containment edge for discovered symbol.
+        """
         if not name:
             return
         fn_id = f"{module_id}:{name}"
         local_symbols[name] = fn_id
-        add_node(graph, node_id=fn_id, node_type="function", language=self.language, name=name, file=rel, line=line)
-        add_contains_edge(graph, language=self.language, source=module_id, target=fn_id, file=rel, line=line)
+        graph.add_node(
+            Node(
+                id=fn_id,
+                type="function",
+                language=self.language,
+                name=name,
+                file=rel,
+                line=line,
+            )
+        )
+        graph.add_edge(
+            Edge(
+                type="CONTAINS",
+                source=module_id,
+                target=fn_id,
+                language=self.language,
+                confidence="high",
+                file=rel,
+                line=line,
+            )
+        )

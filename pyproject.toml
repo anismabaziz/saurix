@@ -40,11 +40,21 @@ dev = [
     "build>=1.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "ruff>=0.8.0",
     "twine>=6.2.0",
 ]
 
 [tool.uv]
 package = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+# Ruff reads .gitignore by default, so tmp/, dist/, build/ and the vendored
+# benchmark repos under tmp/ are skipped automatically.
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,18 +4,21 @@ import re
 from pathlib import Path
 
 from ..core.graph import GraphStore
-from .common import add_calls_edge, add_contains_edge, add_import_edge, add_node
+from ..core.models import Edge, Node
+from .base import Extractor
 from .regex_lang import RegexLangExtractor
 from .tree_sitter_support import find_first_desc, get_parser, text_of, walk
 
 
-class JavaExtractor:
+class JavaExtractor(Extractor):
     language = "java"
 
     def __init__(self) -> None:
         self._fallback = RegexLangExtractor(
             language="java",
-            import_pattern=re.compile(r"import\s+(?:static\s+)?(?P<target>[A-Za-z_][A-Za-z0-9_\.]*)\s*;"),
+            import_pattern=re.compile(
+                r"import\s+(?:static\s+)?(?P<target>[A-Za-z_][A-Za-z0-9_\.]*)\s*;"
+            ),
             function_pattern=re.compile(
                 r"(?:public|private|protected)?\s*(?:static\s+)?[A-Za-z_<>,\[\]]+\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\(",
                 re.MULTILINE,
@@ -26,7 +29,9 @@ class JavaExtractor:
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
         if self._parser is None:
-            self._fallback.extract(repo_root=repo_root, file_path=file_path, graph=graph)
+            self._fallback.extract(
+                repo_root=repo_root, file_path=file_path, graph=graph
+            )
             return
 
         rel = file_path.relative_to(repo_root).as_posix()
@@ -35,7 +40,16 @@ class JavaExtractor:
 
         module_name = rel.rsplit(".", 1)[0].replace("/", ".")
         module_id = f"java://{module_name}"
-        add_node(graph, node_id=module_id, node_type="module", language=self.language, name=module_name, file=rel, line=1)
+        graph.add_node(
+            Node(
+                id=module_id,
+                type="module",
+                language=self.language,
+                name=module_name,
+                file=rel,
+                line=1,
+            )
+        )
 
         local_symbols: dict[str, str] = {}
         for node in walk(root):
@@ -53,18 +67,24 @@ class JavaExtractor:
             if not name:
                 continue
             target = local_symbols.get(name, f"java://{name}")
-            add_node(graph, node_id=target, node_type="symbol", language=self.language, name=name)
-            add_calls_edge(
-                graph,
-                language=self.language,
-                source=caller_id,
-                target=target,
-                file=rel,
-                line=node.start_point[0] + 1,
-                confidence="medium" if target in local_symbols.values() else "low",
+            graph.add_node(
+                Node(id=target, type="symbol", language=self.language, name=name)
+            )
+            graph.add_edge(
+                Edge(
+                    type="CALLS",
+                    source=caller_id,
+                    target=target,
+                    language=self.language,
+                    confidence="medium" if target in local_symbols.values() else "low",
+                    file=rel,
+                    line=node.start_point[0] + 1,
+                )
             )
 
-    def _extract_import(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str) -> None:
+    def _extract_import(
+        self, node, source: bytes, graph: GraphStore, module_id: str, rel: str
+    ) -> None:
         if node.type != "import_declaration":
             return
         scoped = find_first_desc(node, {"scoped_identifier", "identifier"})
@@ -74,8 +94,20 @@ class JavaExtractor:
         if not target:
             return
         target_id = f"java://{target}"
-        add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-        add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=node.start_point[0] + 1)
+        graph.add_node(
+            Node(id=target_id, type="module", language=self.language, name=target)
+        )
+        graph.add_edge(
+            Edge(
+                type="IMPORTS",
+                source=module_id,
+                target=target_id,
+                language=self.language,
+                confidence="high",
+                file=rel,
+                line=node.start_point[0] + 1,
+            )
+        )
 
     def _extract_method(
         self,
@@ -97,5 +129,24 @@ class JavaExtractor:
         fn_id = f"{module_id}:{name}"
         local_symbols[name] = fn_id
         line = node.start_point[0] + 1
-        add_node(graph, node_id=fn_id, node_type="method", language=self.language, name=name, file=rel, line=line)
-        add_contains_edge(graph, language=self.language, source=module_id, target=fn_id, file=rel, line=line)
+        graph.add_node(
+            Node(
+                id=fn_id,
+                type="method",
+                language=self.language,
+                name=name,
+                file=rel,
+                line=line,
+            )
+        )
+        graph.add_edge(
+            Edge(
+                type="CONTAINS",
+                source=module_id,
+                target=fn_id,
+                language=self.language,
+                confidence="high",
+                file=rel,
+                line=line,
+            )
+        )

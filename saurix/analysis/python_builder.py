@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 
 from ..core.graph import GraphStore
-from .common import add_calls_edge, add_contains_edge, add_node
+from ..core.models import Edge, Node
 from .python_utils import call_confidence, name_of, resolve_name
 
 
@@ -19,23 +19,27 @@ def add_class(
     class_methods: set[str],
 ) -> None:
     class_id = f"{module_id}:{class_node.name}"
-    add_node(
-        graph,
-        node_id=class_id,
-        node_type="class",
-        language=language,
-        name=class_node.name,
-        file=rel,
-        line=getattr(class_node, "lineno", None),
-        metadata={"kind": "class"},
+    graph.add_node(
+        Node(
+            id=class_id,
+            type="class",
+            language=language,
+            name=class_node.name,
+            file=rel,
+            line=getattr(class_node, "lineno", None),
+            metadata={"kind": "class"},
+        )
     )
-    add_contains_edge(
-        graph,
-        language=language,
-        source=module_id,
-        target=class_id,
-        file=rel,
-        line=getattr(class_node, "lineno", None),
+    graph.add_edge(
+        Edge(
+            type="CONTAINS",
+            source=module_id,
+            target=class_id,
+            language=language,
+            confidence="high",
+            file=rel,
+            line=getattr(class_node, "lineno", None),
+        )
     )
 
     for child in class_node.body:
@@ -74,23 +78,30 @@ def add_function(
         fn_type = "function"
         parent_id = module_id
 
-    add_node(
-        graph,
-        node_id=fn_id,
-        node_type=fn_type,
-        language=language,
-        name=fn_node.name,
-        file=rel,
-        line=getattr(fn_node, "lineno", None),
-        metadata={"args": [arg.arg for arg in fn_node.args.args], "async": isinstance(fn_node, ast.AsyncFunctionDef)},
+    graph.add_node(
+        Node(
+            id=fn_id,
+            type=fn_type,
+            language=language,
+            name=fn_node.name,
+            file=rel,
+            line=getattr(fn_node, "lineno", None),
+            metadata={
+                "args": [arg.arg for arg in fn_node.args.args],
+                "async": isinstance(fn_node, ast.AsyncFunctionDef),
+            },
+        )
     )
-    add_contains_edge(
-        graph,
-        language=language,
-        source=parent_id,
-        target=fn_id,
-        file=rel,
-        line=getattr(fn_node, "lineno", None),
+    graph.add_edge(
+        Edge(
+            type="CONTAINS",
+            source=parent_id,
+            target=fn_id,
+            language=language,
+            confidence="high",
+            file=rel,
+            line=getattr(fn_node, "lineno", None),
+        )
     )
 
     for child in ast.walk(fn_node):
@@ -107,13 +118,17 @@ def add_function(
             class_name=class_name,
             class_methods=class_methods,
         )
-        add_node(graph, node_id=resolved, node_type="symbol", language=language, name=raw_name)
-        add_calls_edge(
-            graph,
-            language=language,
-            source=fn_id,
-            target=resolved,
-            file=rel,
-            line=getattr(child, "lineno", None),
-            confidence=call_confidence(raw_name, resolved, imports),
+        graph.add_node(
+            Node(id=resolved, type="symbol", language=language, name=raw_name)
+        )
+        graph.add_edge(
+            Edge(
+                type="CALLS",
+                source=fn_id,
+                target=resolved,
+                language=language,
+                confidence=call_confidence(raw_name, resolved, imports),
+                file=rel,
+                line=getattr(child, "lineno", None),
+            )
         )

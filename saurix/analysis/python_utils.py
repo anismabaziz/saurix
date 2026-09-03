@@ -23,7 +23,9 @@ def call_confidence(raw_name: str, resolved: str, imports: dict[str, str]) -> st
     if head in imports:
         return "high" if "." in raw_name else "medium"
 
-    if resolved.startswith("python://") and raw_name == resolved.removeprefix("python://"):
+    if resolved.startswith("python://") and raw_name == resolved.removeprefix(
+        "python://"
+    ):
         if head in _BUILTIN_CALLS:
             return "medium"
         return "low"

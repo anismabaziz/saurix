@@ -1,32 +1,45 @@
-from __future__ import annotations
-
 """
 CLI Application Shell
 
 This module implements the interactive REPL (Read-Eval-Print Loop) for Saurix.
 It handles user input, parses commands using shlex (to support quoted paths/names),
-and dispatches them to their respective implementations in commands.py and extra_commands.py.
+and dispatches them to their respective implementations in commands.py.
 """
+
+from __future__ import annotations
 
 import argparse
 import shlex
 from collections.abc import Callable
 from pathlib import Path
 
-from .commands import ShellState, cmd_callees, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_init, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_where
-from .extra_commands import cmd_export, cmd_visual
-from .help import interactive_help
-from .ui import ASCII_LOGO, UI, clear_screen
+from ..core.config import config
 from ..core.graph import GraphStore
-from ..infra.config import config
-
+from .commands import (
+    ShellState,
+    cmd_callees,
+    cmd_callers,
+    cmd_find,
+    cmd_impact,
+    cmd_index,
+    cmd_init,
+    cmd_load,
+    cmd_path,
+    cmd_related,
+    cmd_stats,
+    cmd_visual,
+    cmd_where,
+)
+from .ui import ASCII_LOGO, UI, clear_screen, interactive_help
 
 # Default location for the graph file, pulled from centralized config
 DEFAULT_GRAPH_RELATIVE = config.default_graph_path
 
 
 def create_state(graph_path: Path, ui: UI) -> ShellState:
-    """Initializes the persistent state for the interactive session."""
+    """
+    Initializes the persistent state for the interactive session.
+    """
     return ShellState(
         ui=ui,
         graph_path=graph_path,
@@ -34,10 +47,12 @@ def create_state(graph_path: Path, ui: UI) -> ShellState:
     )
 
 
-def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] | None = None) -> bool:
+def dispatch_command(
+    state: ShellState, raw: str, on_clear: Callable[[], None] | None = None
+) -> bool:
     """
     Parses and executes a single user command.
-    
+
     Returns:
         False if the shell should exit (e.g., 'exit' command), True otherwise.
     """
@@ -53,12 +68,12 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         return True
 
     cmd, rest = parts[0].lower(), parts[1:]
-    
+
     # Built-in shell control commands
     if cmd in {"exit", "quit"}:
         ui.success("Goodbye.")
         return False
-        
+
     if cmd == "help":
         ui.print(interactive_help())
     elif cmd == "clear":
@@ -71,10 +86,12 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         # Toggle raw JSON output for all subsequent commands
         if rest and rest[0] in {"on", "off"}:
             state.raw_mode = rest[0] == "on"
-            ui.success(f"Raw JSON output: {'enabled' if state.raw_mode else 'disabled'}")
+            ui.success(
+                f"Raw JSON output: {'enabled' if state.raw_mode else 'disabled'}"
+            )
         else:
             ui.warn("Usage: raw on|off")
-            
+
     # Core domain commands (delegated to commands.py)
     elif cmd == "where":
         cmd_where(state)
@@ -98,22 +115,26 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_path(state, rest)
     elif cmd == "impact":
         cmd_impact(state, rest)
-        
-    # Extra commands (delegated to extra_commands.py)
-    elif cmd == "export":
-        cmd_export(state, rest)
     elif cmd == "visual":
         cmd_visual(state, rest)
     else:
         ui.warn("Unknown command. Type 'help' for usage.")
-        
+
     return True
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Configures the command-line argument parser for the atlas entrypoint."""
-    parser = argparse.ArgumentParser(prog="saurix", description="Knowledge graph CLI for AI code exploration.")
-    parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
+    """
+    Configures the command-line argument parser for the saurix entrypoint.
+    """
+    parser = argparse.ArgumentParser(
+        prog="saurix", description="Knowledge graph CLI for AI code exploration."
+    )
+    parser.add_argument(
+        "--graph",
+        default=str(DEFAULT_GRAPH_RELATIVE),
+        help="Graph JSON path to preload",
+    )
     # We use parse_known_args to allow trailing commands
     return parser
 
@@ -121,21 +142,21 @@ def build_parser() -> argparse.ArgumentParser:
 def run(argv: list[str] | None = None) -> int:
     """
     Main loop for the interactive shell.
-    
-    Handles preloading of graphs, the interactive input prompt, 
+
+    Handles preloading of graphs, the interactive input prompt,
     and graceful shutdowns on Ctrl+C or EOF.
     """
     ui = UI()
     args, remaining = build_parser().parse_known_args(argv)
-    
+
     graph_path = Path(args.graph).resolve()
     state = create_state(graph_path, ui)
-    
+
     # If one-shot command was provided (e.g. saurix init)
     if remaining:
         dispatch_command(state, " ".join(remaining))
         return 0
-    
+
     _render_banner(ui)
 
     while True:
@@ -154,7 +175,9 @@ def run(argv: list[str] | None = None) -> int:
 
 
 def _render_banner(ui: UI) -> None:
-    """Displays the Saurix ASCII logo and initialization message."""
+    """
+    Displays the Saurix ASCII logo and initialization message.
+    """
     ui.print(f"[bold cyan]{ASCII_LOGO}[/]")
     ui.header("Saurix Interactive")
     ui.muted("Type 'help' to list commands.")

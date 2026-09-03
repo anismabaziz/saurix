@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/pypi/l/saurix.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/pypi/dm/saurix.svg)](https://pypi.org/project/saurix/)
 
-Saurix is an interactive knowledge graph engine that transforms complex codebases into a queryable, 3D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
+Saurix is an interactive knowledge graph engine that transforms complex codebases into a queryable, 2D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
 
 ## Why Saurix for AI Agents?
 
@@ -46,7 +46,7 @@ Saurix follows a clean, domain-driven modular structure designed for scale and s
    cd /path/to/your/project
    saurix init
    ```
-   *This command indexes your project, creates a local 3D dashboard (`saurix.html`), and generates your MCP config in one step.*
+   *This command indexes your project, creates a local 2D dashboard (`saurix.html`), and generates your MCP config in one step.*
 
 ### Running the MCP Server
 
@@ -69,8 +69,7 @@ saurix-mcp
 | `callers <sym>`  | List symbols calling the target                       |
 | `path <A> <B>`   | Find shortest directed path between two symbols       |
 | `impact <sym>`   | Estimate blast radius of a change                     |
-| `visual`         | Generate a hybrid 2D/3D knowledge graph visualization |
-| `export`         | Export to GraphML or Neo4j CSV                        |
+| `visual`         | Generate a 2D knowledge graph visualization           |
 
 ---
 

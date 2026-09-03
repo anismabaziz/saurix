@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
 import tempfile
@@ -7,9 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from ..infra.logging import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 _GITHUB_HOSTS = {"github.com", "www.github.com"}
 
@@ -42,7 +41,9 @@ def normalize_github_clone_url(source: str) -> tuple[str, str]:
 
 @contextmanager
 def prepare_repo_source(source: str):
-    """Prepare a repository source, either local or cloned from GitHub."""
+    """
+    Prepare a repository source, either local or cloned from GitHub.
+    """
     candidate = Path(source).expanduser()
     if candidate.exists():
         logger.info(f"Using local source: {candidate}")
