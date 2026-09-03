@@ -70,7 +70,6 @@ saurix-mcp
 | `path <A> <B>`   | Find shortest directed path between two symbols       |
 | `impact <sym>`   | Estimate blast radius of a change                     |
 | `visual`         | Generate a hybrid 2D/3D knowledge graph visualization |
-| `export`         | Export to GraphML or Neo4j CSV                        |
 
 ---
 

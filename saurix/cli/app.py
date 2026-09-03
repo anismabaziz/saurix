@@ -13,7 +13,7 @@ import shlex
 from collections.abc import Callable
 from pathlib import Path
 
-from .commands import ShellState, cmd_callees, cmd_callers, cmd_export, cmd_find, cmd_impact, cmd_index, cmd_init, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_visual, cmd_where
+from .commands import ShellState, cmd_callees, cmd_callers, cmd_find, cmd_impact, cmd_index, cmd_init, cmd_load, cmd_path, cmd_related, cmd_stats, cmd_visual, cmd_where
 from .ui import ASCII_LOGO, UI, clear_screen, interactive_help
 from ..core.config import config
 from ..core.graph import GraphStore
@@ -96,8 +96,6 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
         cmd_path(state, rest)
     elif cmd == "impact":
         cmd_impact(state, rest)
-    elif cmd == "export":
-        cmd_export(state, rest)
     elif cmd == "visual":
         cmd_visual(state, rest)
     else:
