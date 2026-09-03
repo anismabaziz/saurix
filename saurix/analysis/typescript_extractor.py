@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-"""TypeScript extractor using Tree-sitter with regex fallback."""
+"""
+TypeScript extractor using Tree-sitter with regex fallback.
+"""
 
 import re
 from pathlib import Path
@@ -32,7 +34,9 @@ class TypeScriptExtractor(Extractor):
         self._parser = get_parser("typescript")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
-        """Extract module/import/function/call relationships from TS files."""
+        """
+        Extract module/import/function/call relationships from TS files.
+        """
         if self._parser is None:
             self._fallback.extract(repo_root=repo_root, file_path=file_path, graph=graph)
             return
@@ -68,7 +72,9 @@ class TypeScriptExtractor(Extractor):
             self._extract_calls(node, source, graph, module_id, rel, local_symbols, class_members, imports)
 
     def _extract_import(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, imports: dict[str, str]) -> None:
-        """Extract one import edge from a TS import statement node."""
+        """
+        Extract one import edge from a TS import statement node.
+        """
         if node.type != "import_statement":
             return
 
@@ -140,7 +146,9 @@ class TypeScriptExtractor(Extractor):
                 graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=node.start_point[0] + 1))
 
     def _extract_function_like(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, local_symbols: dict[str, str]) -> None:
-        """Extract function declarations and arrow-function variable bindings."""
+        """
+        Extract function declarations and arrow-function variable bindings.
+        """
         if node.type == "function_declaration":
             ident = find_first_desc(node, {"identifier"})
             if ident is None:
@@ -170,7 +178,9 @@ class TypeScriptExtractor(Extractor):
         local_symbols: dict[str, str],
         class_members: dict[str, dict[str, str]],
     ) -> None:
-        """Extract class declarations and their methods."""
+        """
+        Extract class declarations and their methods.
+        """
         if node.type not in {"class_declaration", "class"}:
             return
 
@@ -217,7 +227,9 @@ class TypeScriptExtractor(Extractor):
                         graph.add_edge(Edge(type="CONTAINS", source=class_id, target=member_id, language=self.language, confidence="high", file=rel, line=member.start_point[0] + 1))
 
     def _extract_interface(self, node, source: bytes, graph: GraphStore, module_id: str, rel: str, local_symbols: dict[str, str]) -> None:
-        """Extract interface declarations."""
+        """
+        Extract interface declarations.
+        """
         if node.type != "interface_declaration":
             return
 
@@ -246,7 +258,9 @@ class TypeScriptExtractor(Extractor):
         class_members: dict[str, dict[str, str]],
         imports: dict[str, str],
     ) -> None:
-        """Extract call expressions with improved resolution."""
+        """
+        Extract call expressions with improved resolution.
+        """
         if node.type != "call_expression":
             return
 
@@ -321,7 +335,9 @@ class TypeScriptExtractor(Extractor):
         local_symbols: dict[str, str],
         class_members: dict[str, dict[str, str]],
     ) -> str:
-        """Find the enclosing function or class for a node."""
+        """
+        Find the enclosing function or class for a node.
+        """
         current = node
         while current:
             if current.type in {"function_declaration", "method_definition", "arrow_function"}:
@@ -348,7 +364,9 @@ class TypeScriptExtractor(Extractor):
         name: str,
         line: int,
     ) -> None:
-        """Create function node and containment edge for discovered symbol."""
+        """
+        Create function node and containment edge for discovered symbol.
+        """
         if not name:
             return
         fn_id = f"{module_id}:{name}"

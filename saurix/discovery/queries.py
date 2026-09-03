@@ -15,7 +15,9 @@ from ..core.graph import GraphStore
 
 
 def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[str, str]]:
-    """Fuzzy search symbols by substring of name or id."""
+    """
+    Fuzzy search symbols by substring of name or id.
+    """
     q = needle.lower()
     rows: list[dict[str, str]] = []
 
@@ -28,7 +30,9 @@ def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[st
 
 
 def _resolve_exact_ids(graph: GraphStore, symbol: str) -> list[str]:
-    """Shared exact resolution: exact id, then exact name via index. No fuzzy fallback."""
+    """
+    Shared exact resolution: exact id, then exact name via index. No fuzzy fallback.
+    """
     if symbol in graph.nodes:
         return [symbol]
     exact = [node.id for node in graph.get_nodes_by_name(symbol)]
@@ -53,7 +57,9 @@ def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[
 
 
 def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
-    """Find CALLS edges targeting `symbol`, sharing exact resolution with traversal queries."""
+    """
+    Find CALLS edges targeting `symbol`, sharing exact resolution with traversal queries.
+    """
     # Use exact resolution only to preserve pre-collapse semantics (no fuzzy callers)
     exact_ids = _resolve_exact_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
@@ -77,7 +83,9 @@ def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
 
 
 def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
-    """List CALLS edges outgoing from `symbol`, sharing exact resolution."""
+    """
+    List CALLS edges outgoing from `symbol`, sharing exact resolution.
+    """
     exact_ids = _resolve_exact_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
 
@@ -100,7 +108,9 @@ def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
 
 
 def related_files(graph: GraphStore, file_path: str, depth: int = 2, limit: int = 100) -> list[str]:
-    """Find files related to `file_path` via undirected graph neighborhood."""
+    """
+    Find files related to `file_path` via undirected graph neighborhood.
+    """
     file_nodes = [n.id for n in graph.nodes.values() if n.file == file_path]
     if not file_nodes:
         return []

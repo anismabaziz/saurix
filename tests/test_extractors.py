@@ -1,4 +1,6 @@
-"""Tests for Python extractor."""
+"""
+Tests for Python extractor.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,10 +12,14 @@ from saurix.core.graph import GraphStore
 
 
 class TestPythonExtractorBasics:
-    """Test basic Python extraction."""
+    """
+    Test basic Python extraction.
+    """
 
     def test_extract_module(self, tmp_path: Path) -> None:
-        """Test extracting a simple module."""
+        """
+        Test extracting a simple module.
+        """
         (tmp_path / "test_module.py").write_text("""
 import os
 from sys import path
@@ -35,7 +41,9 @@ class MyClass:
         assert graph.nodes["python://test_module"].type == "module"
 
     def test_extract_function(self, tmp_path: Path) -> None:
-        """Test extracting functions."""
+        """
+        Test extracting functions.
+        """
         (tmp_path / "funcs.py").write_text("""
 def standalone_func():
     pass
@@ -54,7 +62,9 @@ async def async_func():
         assert graph.nodes["python://funcs:standalone_func"].type == "function"
 
     def test_extract_class(self, tmp_path: Path) -> None:
-        """Test extracting classes."""
+        """
+        Test extracting classes.
+        """
         (tmp_path / "classes.py").write_text("""
 class BaseClass:
     pass
@@ -81,7 +91,9 @@ class DerivedClass(BaseClass):
         assert inherits_edges[0].source == "python://classes:DerivedClass"
 
     def test_extract_imports(self, tmp_path: Path) -> None:
-        """Test extracting import statements."""
+        """
+        Test extracting import statements.
+        """
         (tmp_path / "imports.py").write_text("""
 import os
 import sys as system
@@ -103,10 +115,14 @@ from typing import List, Dict
 
 
 class TestPythonExtractorCalls:
-    """Test call extraction."""
+    """
+    Test call extraction.
+    """
 
     def test_extract_function_calls(self, tmp_path: Path) -> None:
-        """Test extracting function calls."""
+        """
+        Test extracting function calls.
+        """
         (tmp_path / "calls.py").write_text("""
 def helper():
     return 1
@@ -130,7 +146,9 @@ def caller():
         assert any("helper" in e.target for e in caller_calls)
 
     def test_extract_method_calls(self, tmp_path: Path) -> None:
-        """Test extracting method calls within classes."""
+        """
+        Test extracting method calls within classes.
+        """
         (tmp_path / "methods.py").write_text("""
 class Calculator:
     def add(self, a, b):
@@ -155,10 +173,14 @@ class Calculator:
 
 
 class TestPythonExtractorEdgeCases:
-    """Test edge cases."""
+    """
+    Test edge cases.
+    """
 
     def test_empty_file(self, tmp_path: Path) -> None:
-        """Test extracting empty file."""
+        """
+        Test extracting empty file.
+        """
         (tmp_path / "empty.py").write_text("")
 
         graph = GraphStore()
@@ -169,7 +191,9 @@ class TestPythonExtractorEdgeCases:
         assert "python://empty" in graph.nodes
 
     def test_syntax_error(self, tmp_path: Path) -> None:
-        """Test handling syntax errors."""
+        """
+        Test handling syntax errors.
+        """
         (tmp_path / "broken.py").write_text("""
 def bad_syntax(
     print("missing paren"
@@ -185,7 +209,9 @@ def bad_syntax(
         assert "parse_error" in graph.nodes["python://broken.py"].metadata
 
     def test_nested_functions(self, tmp_path: Path) -> None:
-        """Test nested function definitions."""
+        """
+        Test nested function definitions.
+        """
         (tmp_path / "nested.py").write_text("""
 def outer():
     def inner():
@@ -204,7 +230,9 @@ def outer():
         # At minimum, outer should be present
 
     def test_import_from_parent(self, tmp_path: Path) -> None:
-        """Test extracting relative imports."""
+        """
+        Test extracting relative imports.
+        """
         (tmp_path / "pkg").mkdir()
         (tmp_path / "pkg" / "__init__.py").write_text("")
         (tmp_path / "pkg" / "submodule.py").write_text("""
@@ -221,10 +249,14 @@ from .. import sibling
 
 
 class TestPythonExtractorResolution:
-    """Test symbol resolution."""
+    """
+    Test symbol resolution.
+    """
 
     def test_resolves_imported_calls(self, tmp_path: Path) -> None:
-        """Test that calls to imported symbols are resolved."""
+        """
+        Test that calls to imported symbols are resolved.
+        """
         (tmp_path / "main.py").write_text("""
 from math import sqrt
 from os.path import join as path_join
@@ -247,7 +279,9 @@ def build_path(*parts):
         assert "python://os.path.join" in targets
 
     def test_resolves_local_calls(self, tmp_path: Path) -> None:
-        """Test that local function calls are resolved."""
+        """
+        Test that local function calls are resolved.
+        """
         (tmp_path / "locals.py").write_text("""
 def utility():
     return 42

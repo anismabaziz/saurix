@@ -33,12 +33,16 @@ LANGUAGE_BY_EXTENSION = {
 
 
 def detect_language(path: Path) -> str | None:
-    """Returns the normalized language name based on the file extension."""
+    """
+    Returns the normalized language name based on the file extension.
+    """
     return LANGUAGE_BY_EXTENSION.get(path.suffix.lower())
 
 
 class IndexResult:
-    """Container for the results of an indexing operation."""
+    """
+    Container for the results of an indexing operation.
+    """
     def __init__(self, graph: GraphStore, scanned_files: int, indexed_files: int) -> None:
         self.graph = graph
         self.scanned_files = scanned_files
@@ -80,7 +84,9 @@ class RepositoryIndexer:
         }
 
     def _scan_files(self) -> list[Path]:
-        """Collects all indexable files while respecting exclusion rules."""
+        """
+        Collects all indexable files while respecting exclusion rules.
+        """
         files: list[Path] = []
         for path in self.root.rglob("*"):
             if not path.is_file():
@@ -177,6 +183,8 @@ def build_graph(
     exclude_dirs: set[str] | None = None,
     on_file_indexed: Callable[[int, int, str], None] | None = None,
 ) -> IndexResult:
-    """Legacy entrypoint for starting a full repository index."""
+    """
+    Legacy entrypoint for starting a full repository index.
+    """
     indexer = RepositoryIndexer(repo_root, exclude_dirs, on_file_indexed)
     return indexer.index()

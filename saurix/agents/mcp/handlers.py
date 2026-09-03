@@ -25,7 +25,9 @@ from .utils import clamp_depth, clamp_limit, normalize_graph_path
 
 
 def _format_error(exc: Exception, context: str = "") -> str:
-    """Helper to format exceptions into human-readable strings for tool errors."""
+    """
+    Helper to format exceptions into human-readable strings for tool errors.
+    """
     msg = f"{type(exc).__name__}: {exc}"
     if context:
         msg = f"{context}: {msg}"
@@ -87,7 +89,9 @@ def index_repo(source: str, out: str | None = None) -> dict:
 
 
 def stats(graph: str | None = None) -> dict:
-    """Returns high-level statistics about the specified graph."""
+    """
+    Returns high-level statistics about the specified graph.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -110,7 +114,9 @@ def stats(graph: str | None = None) -> dict:
 
 
 def find(graph: str | None, query: str, limit: int | None = None) -> dict:
-    """Performs a fuzzy search for symbols (functions, classes, etc.) in the graph."""
+    """
+    Performs a fuzzy search for symbols (functions, classes, etc.) in the graph.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -128,7 +134,9 @@ def find(graph: str | None, query: str, limit: int | None = None) -> dict:
 
 
 def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
-    """Identifies all functions or modules that call the specified symbol."""
+    """
+    Identifies all functions or modules that call the specified symbol.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -146,7 +154,9 @@ def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
 
 
 def callees(graph: str | None, symbol: str, limit: int | None = None) -> dict:
-    """Identifies all functions or modules that are called by the specified symbol."""
+    """
+    Identifies all functions or modules that are called by the specified symbol.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -164,7 +174,9 @@ def callees(graph: str | None, symbol: str, limit: int | None = None) -> dict:
 
 
 def path_between(graph: str | None, source: str, target: str, max_depth: int | None = None) -> dict:
-    """Finds the shortest dependency or call path between two symbols."""
+    """
+    Finds the shortest dependency or call path between two symbols.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -182,7 +194,9 @@ def path_between(graph: str | None, source: str, target: str, max_depth: int | N
 
 
 def impact(graph: str | None, symbol: str, depth: int | None = None, limit: int | None = None) -> dict:
-    """Estimates the potential blast radius of changing a specific symbol."""
+    """
+    Estimates the potential blast radius of changing a specific symbol.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
@@ -200,7 +214,9 @@ def impact(graph: str | None, symbol: str, depth: int | None = None, limit: int 
 
 
 def related(graph: str | None, file: str, depth: int | None = None, limit: int | None = None) -> dict:
-    """Identifies files that are structurally or behaviorally related to the specified file."""
+    """
+    Identifies files that are structurally or behaviorally related to the specified file.
+    """
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
