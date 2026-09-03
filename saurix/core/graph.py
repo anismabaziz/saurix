@@ -148,9 +148,7 @@ class GraphStore:
         # Include optional metadata fields if present
         if "extraction_coverage" in self._metadata:
             stats["extraction_coverage"] = self._metadata["extraction_coverage"]
-        if "incremental_cache" in self._metadata:
-            stats["incremental_cache"] = self._metadata["incremental_cache"]
-            
+
         return stats
 
     def to_dict(self) -> dict[str, object]:
