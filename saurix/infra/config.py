@@ -23,10 +23,17 @@ class AtlasConfig:
     
     # Resource limits
     max_visual_nodes: int = 800
+    default_visual_limit: int = 5000
     default_find_limit: int = 20
     default_callers_limit: int = 50
+    default_callees_limit: int = 50
+    default_related_depth: int = 2
+    default_related_limit: int = 100
     default_impact_depth: int = 3
+    default_impact_limit: int = 200
     default_path_max_depth: int = 12
+    max_limit: int = 500
+    max_depth: int = 20
 
     @property
     def tmp_dir(self) -> Path:

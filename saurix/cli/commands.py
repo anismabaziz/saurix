@@ -5,14 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .flags import parse_csv_flag, parse_int_flag, parse_path_flag
 from .render import render_index_summary, render_stats_panel, render_table
 from .ui import UI, print_json
 from ..core.graph import GraphStore
 from ..core.indexing import build_graph
+from ..core.source import prepare_repo_source
 from ..discovery.basic import callees_of, callers_of, find_symbol, related_files
 from ..discovery.traversal import impact_of, shortest_path
 from ..discovery.visual import generate_visualization
-from ..core.source import prepare_repo_source
+from ..infra.config import config
 
 
 @dataclass
@@ -33,8 +35,8 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
     if not rest:
         state.ui.warn("Usage: index <repo-or-github-url> [--out PATH]")
         return
-    out = Path(rest[rest.index("--out") + 1]).resolve() if "--out" in rest and len(rest) > rest.index("--out") + 1 else state.graph_path
-    excludes = _parse_csv_flag(rest, "--exclude")
+    out = parse_path_flag(rest, "--out", state.graph_path)
+    excludes = parse_csv_flag(rest, "--exclude")
     source = rest[0]
     try:
         with prepare_repo_source(source) as (repo_path, source_kind):
@@ -111,7 +113,7 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
-    limit = _parse_int_flag(rest, "--limit", 20)
+    limit = parse_int_flag(rest, "--limit", config.default_find_limit)
     if limit is None:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
@@ -124,7 +126,7 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
-    limit = _parse_int_flag(rest, "--limit", 50)
+    limit = parse_int_flag(rest, "--limit", config.default_callers_limit)
     if limit is None:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
@@ -137,7 +139,7 @@ def cmd_callees(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
-    limit = _parse_int_flag(rest, "--limit", 50)
+    limit = parse_int_flag(rest, "--limit", config.default_callees_limit)
     if limit is None:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
@@ -150,7 +152,7 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
-    depth, limit = _parse_int_flag(rest, "--depth", 2), _parse_int_flag(rest, "--limit", 100)
+    depth, limit = parse_int_flag(rest, "--depth", config.default_related_depth), parse_int_flag(rest, "--limit", config.default_related_limit)
     if depth is None or limit is None:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
@@ -163,7 +165,7 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or len(rest) < 2:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
-    max_depth = _parse_int_flag(rest, "--max-depth", 12)
+    max_depth = parse_int_flag(rest, "--max-depth", config.default_path_max_depth)
     if max_depth is None:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
@@ -176,7 +178,7 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
-    depth, limit = _parse_int_flag(rest, "--depth", 3), _parse_int_flag(rest, "--limit", 200)
+    depth, limit = parse_int_flag(rest, "--depth", config.default_impact_depth), parse_int_flag(rest, "--limit", config.default_impact_limit)
     if depth is None or limit is None:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
@@ -249,24 +251,3 @@ def _ensure_graph(state: ShellState) -> bool:
         state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
         return False
     return True
-
-
-def _parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
-    """Parse optional integer flag value from command tokens."""
-    if flag not in parts:
-        return default
-    try:
-        return int(parts[parts.index(flag) + 1])
-    except (IndexError, ValueError):
-        return None
-
-
-def _parse_csv_flag(parts: list[str], flag: str) -> set[str] | None:
-    if flag not in parts:
-        return None
-    try:
-        raw = parts[parts.index(flag) + 1]
-    except IndexError:
-        return None
-    entries = {chunk.strip() for chunk in raw.split(",") if chunk.strip()}
-    return entries or None
