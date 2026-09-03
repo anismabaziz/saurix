@@ -17,9 +17,10 @@ from time import perf_counter
 
 from ...core.graph import GraphStore
 from ...core.indexing import build_graph
+from ...core.source import prepare_repo_source
 from ...discovery.basic import callees_of, callers_of, find_symbol, related_files
 from ...discovery.traversal import impact_of, shortest_path
-from ...core.source import prepare_repo_source
+from ...infra.config import config
 from .schemas import ToolError, ToolResult
 from .utils import clamp_depth, clamp_limit, normalize_graph_path
 
@@ -114,7 +115,7 @@ def find(graph: str | None, query: str, limit: int | None = None) -> dict:
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = find_symbol(g, query, limit=clamp_limit(limit, 20))
+        rows = find_symbol(g, query, limit=clamp_limit(limit, config.default_find_limit))
         return ToolResult(
             ok=True,
             data=rows,
@@ -132,7 +133,7 @@ def callers(graph: str | None, symbol: str, limit: int | None = None) -> dict:
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = callers_of(g, symbol, limit=clamp_limit(limit, 50))
+        rows = callers_of(g, symbol, limit=clamp_limit(limit, config.default_callers_limit))
         return ToolResult(
             ok=True,
             data=rows,
@@ -150,7 +151,7 @@ def callees(graph: str | None, symbol: str, limit: int | None = None) -> dict:
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = callees_of(g, symbol, limit=clamp_limit(limit, 50))
+        rows = callees_of(g, symbol, limit=clamp_limit(limit, config.default_callees_limit))
         return ToolResult(
             ok=True,
             data=rows,
@@ -168,7 +169,7 @@ def path_between(graph: str | None, source: str, target: str, max_depth: int | N
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = shortest_path(g, source, target, max_depth=clamp_depth(max_depth, 12))
+        rows = shortest_path(g, source, target, max_depth=clamp_depth(max_depth, config.default_path_max_depth))
         return ToolResult(
             ok=True,
             data=rows,
@@ -186,7 +187,7 @@ def impact(graph: str | None, symbol: str, depth: int | None = None, limit: int 
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = impact_of(g, symbol, depth=clamp_depth(depth, 3), limit=clamp_limit(limit, 200))
+        rows = impact_of(g, symbol, depth=clamp_depth(depth, config.default_impact_depth), limit=clamp_limit(limit, config.default_impact_limit))
         return ToolResult(
             ok=True,
             data=rows,
@@ -204,7 +205,7 @@ def related(graph: str | None, file: str, depth: int | None = None, limit: int |
     t0 = perf_counter()
     try:
         g = GraphStore.from_json(normalize_graph_path(graph))
-        rows = related_files(g, file, depth=clamp_depth(depth, 2), limit=clamp_limit(limit, 100))
+        rows = related_files(g, file, depth=clamp_depth(depth, config.default_related_depth), limit=clamp_limit(limit, config.default_related_limit))
         return ToolResult(
             ok=True,
             data=rows,
