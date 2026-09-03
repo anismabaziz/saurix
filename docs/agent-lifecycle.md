@@ -5,10 +5,10 @@ This walkthrough illustrates how an AI Agent (like Claude or Antigravity) uses S
 ---
 
 ### Phase 0: Triggering a Smart Workflow (Optional)
-Before the agent even looks at the code, the user can jumpstart the process using a pre-defined **MCP Prompt**.
-- **User Action**: Selects the `repo_onboarding` prompt.
+Before the agent looks at the code, the user can steer it by pointing directly at Saurix's tools.
+- **User Action**: Instructs the agent to index the repo and summarize the architecture.
 - **Agent Instruction**: "You are an expert architect. Index the repo, get stats, and explain the entry points."
-- **Benefit**: The agent is immediately put into a "High-Level Architecture" mindset without manual prompting.
+- **Benefit**: The agent can be put into a "High-Level Architecture" mindset without hand-holding; the tool surface stays focused on indexing and querying.
 
 ### Phase 1: Environmental Awareness (The Bird's Eye View)
 The agent is dropped into a 50,000-line repository it has never seen.

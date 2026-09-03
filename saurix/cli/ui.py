@@ -151,8 +151,6 @@ def interactive_help() -> str:
             "  related <file> [--depth N] [--limit N]      Show related files",
             "  path <from> <to> [--max-depth N]            Trace shortest path between symbols",
             "  impact <symbol> [--depth N] [--limit N]     Show blast radius for symbol changes",
-            "  export graphml [--out PATH]                 Export graph to GraphML",
-            "  export neo4j [--out DIR]                    Export graph to Neo4j CSV files",
             "  visual [--out PATH] [--limit N]             Generate D3 visualization HTML",
             "  where                                       Show current graph path",
             "  raw on|off                                  Toggle JSON raw output",
