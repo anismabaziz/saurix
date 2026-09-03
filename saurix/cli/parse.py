@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Shared flag parsing helpers for CLI commands.
 
@@ -7,6 +5,8 @@ Centralizes parsing for ``--limit``, ``--depth``, ``--max-depth``,
 ``--exclude``, and ``--out`` so commands do not duplicate logic and
 defaults stay consistent.
 """
+
+from __future__ import annotations
 
 from pathlib import Path
 

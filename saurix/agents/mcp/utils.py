@@ -1,13 +1,12 @@
-from __future__ import annotations
-
 """
 Shared guardrails/helpers for MCP tool handlers.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from ...core.config import config
-
 
 DEFAULT_GRAPH = config.default_graph_path
 MAX_LIMIT = config.max_limit

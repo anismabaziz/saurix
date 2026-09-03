@@ -1,20 +1,27 @@
-from __future__ import annotations
-
 """
 Core interactive commands for querying and navigating the graph.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
-from .parse import parse_csv_flag, parse_int_flag, parse_path_flag
-from .ui import UI, print_json, render_index_summary, render_stats_panel, render_table
 from ..core.config import config
 from ..core.graph import GraphStore
 from ..core.indexing import build_graph
 from ..core.source import prepare_repo_source
-from ..discovery import callees_of, callers_of, find_symbol, impact_of, related_files, shortest_path
+from ..discovery import (
+    callees_of,
+    callers_of,
+    find_symbol,
+    impact_of,
+    related_files,
+    shortest_path,
+)
 from ..discovery.visual import generate_visualization
+from .parse import parse_csv_flag, parse_int_flag, parse_path_flag
+from .ui import UI, print_json, render_index_summary, render_stats_panel, render_table
 
 
 @dataclass
@@ -29,7 +36,9 @@ def cmd_where(state: ShellState) -> None:
     """
     Print active graph file path if loaded.
     """
-    state.ui.info(f"Loaded graph: {state.graph_path}") if state.loaded_graph else state.ui.warn("No graph loaded")
+    state.ui.info(
+        f"Loaded graph: {state.graph_path}"
+    ) if state.loaded_graph else state.ui.warn("No graph loaded")
 
 
 def cmd_index(state: ShellState, rest: list[str]) -> None:
@@ -55,7 +64,9 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
                 short_rel = rel if len(rel) <= 70 else f"...{rel[-67:]}"
                 state.ui.progress_line_update(done, total, short_rel)
 
-            result = build_graph(repo_path, exclude_dirs=excludes, on_file_indexed=on_file_indexed)
+            result = build_graph(
+                repo_path, exclude_dirs=excludes, on_file_indexed=on_file_indexed
+            )
             if result.scanned_files == 0:
                 state.ui.progress_line_finish("Indexing files... 0/0 (100%)")
                 state.ui.warn("No source files found")
@@ -108,7 +119,9 @@ def cmd_stats(state: ShellState) -> None:
     if not _ensure_graph(state):
         return
     stats = state.loaded_graph.stats()
-    print_json(stats, state.ui) if state.raw_mode else render_stats_panel(stats, state.ui)
+    print_json(stats, state.ui) if state.raw_mode else render_stats_panel(
+        stats, state.ui
+    )
 
 
 def cmd_find(state: ShellState, rest: list[str]) -> None:
@@ -123,7 +136,12 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
     rows = find_symbol(state.loaded_graph, rest[0], limit=limit)
-    print_json(rows, state.ui) if state.raw_mode else render_table("Find Results", rows, [("type", "TYPE"), ("name", "NAME"), ("id", "ID"), ("file", "FILE")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table(
+        "Find Results",
+        rows,
+        [("type", "TYPE"), ("name", "NAME"), ("id", "ID"), ("file", "FILE")],
+        state.ui,
+    )
 
 
 def cmd_callers(state: ShellState, rest: list[str]) -> None:
@@ -138,7 +156,17 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
     rows = callers_of(state.loaded_graph, rest[0], limit=limit)
-    print_json(rows, state.ui) if state.raw_mode else render_table("Callers", rows, [("caller_name", "CALLER"), ("caller", "CALLER_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table(
+        "Callers",
+        rows,
+        [
+            ("caller_name", "CALLER"),
+            ("caller", "CALLER_ID"),
+            ("line", "LINE"),
+            ("confidence", "CONF"),
+        ],
+        state.ui,
+    )
 
 
 def cmd_callees(state: ShellState, rest: list[str]) -> None:
@@ -153,7 +181,17 @@ def cmd_callees(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
     rows = callees_of(state.loaded_graph, rest[0], limit=limit)
-    print_json(rows, state.ui) if state.raw_mode else render_table("Callees", rows, [("callee_name", "CALLEE"), ("callee", "CALLEE_ID"), ("line", "LINE"), ("confidence", "CONF")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table(
+        "Callees",
+        rows,
+        [
+            ("callee_name", "CALLEE"),
+            ("callee", "CALLEE_ID"),
+            ("line", "LINE"),
+            ("confidence", "CONF"),
+        ],
+        state.ui,
+    )
 
 
 def cmd_related(state: ShellState, rest: list[str]) -> None:
@@ -163,12 +201,22 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
-    depth, limit = parse_int_flag(rest, "--depth", config.default_related_depth), parse_int_flag(rest, "--limit", config.default_related_limit)
+    depth, limit = (
+        parse_int_flag(rest, "--depth", config.default_related_depth),
+        parse_int_flag(rest, "--limit", config.default_related_limit),
+    )
     if depth is None or limit is None:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
-    rows = [{"file": p} for p in related_files(state.loaded_graph, rest[0], depth=depth, limit=limit)]
-    print_json([row["file"] for row in rows], state.ui) if state.raw_mode else render_table("Related Files", rows, [("file", "FILE")], state.ui)
+    rows = [
+        {"file": p}
+        for p in related_files(state.loaded_graph, rest[0], depth=depth, limit=limit)
+    ]
+    print_json(
+        [row["file"] for row in rows], state.ui
+    ) if state.raw_mode else render_table(
+        "Related Files", rows, [("file", "FILE")], state.ui
+    )
 
 
 def cmd_path(state: ShellState, rest: list[str]) -> None:
@@ -183,7 +231,18 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
     rows = shortest_path(state.loaded_graph, rest[0], rest[1], max_depth=max_depth)
-    print_json(rows, state.ui) if state.raw_mode else render_table("Path", rows, [("step", "STEP"), ("edge", "EDGE"), ("type", "TYPE"), ("name", "NAME"), ("id", "ID")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table(
+        "Path",
+        rows,
+        [
+            ("step", "STEP"),
+            ("edge", "EDGE"),
+            ("type", "TYPE"),
+            ("name", "NAME"),
+            ("id", "ID"),
+        ],
+        state.ui,
+    )
 
 
 def cmd_impact(state: ShellState, rest: list[str]) -> None:
@@ -193,12 +252,26 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
-    depth, limit = parse_int_flag(rest, "--depth", config.default_impact_depth), parse_int_flag(rest, "--limit", config.default_impact_limit)
+    depth, limit = (
+        parse_int_flag(rest, "--depth", config.default_impact_depth),
+        parse_int_flag(rest, "--limit", config.default_impact_limit),
+    )
     if depth is None or limit is None:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
     rows = impact_of(state.loaded_graph, rest[0], depth=depth, limit=limit)
-    print_json(rows, state.ui) if state.raw_mode else render_table("Blast Radius", rows, [("distance", "DIST"), ("via", "VIA"), ("type", "TYPE"), ("name", "NAME"), ("file", "FILE")], state.ui)
+    print_json(rows, state.ui) if state.raw_mode else render_table(
+        "Blast Radius",
+        rows,
+        [
+            ("distance", "DIST"),
+            ("via", "VIA"),
+            ("type", "TYPE"),
+            ("name", "NAME"),
+            ("file", "FILE"),
+        ],
+        state.ui,
+    )
 
 
 def cmd_init(state: ShellState) -> None:
@@ -247,7 +320,7 @@ def cmd_init(state: ShellState) -> None:
             "saurix": {
                 "type": "local",
                 "command": ["uv", "--directory", str(cwd), "run", "saurix-mcp"],
-                "enabled": True
+                "enabled": True,
             }
         }
     }
@@ -255,8 +328,8 @@ def cmd_init(state: ShellState) -> None:
 
     # 3. Cursor instructions
     ui.muted("\nFor Cursor (Settings -> Models -> MCP):")
-    ui.print(f"  Name: saurix")
-    ui.print(f"  Type: command")
+    ui.print("  Name: saurix")
+    ui.print("  Type: command")
     ui.print(f"  Command: uv --directory {cwd} run saurix-mcp")
     ui.print()
     ui.info(f"Open [bold]{report_path}[/] in your browser to see the 2D map.")
@@ -267,7 +340,9 @@ def cmd_visual(state: ShellState, rest: list[str]) -> None:
     Generate and open a lightweight HTML graph visualization.
     """
     if state.loaded_graph is None:
-        state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
+        state.ui.warn(
+            "No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first."
+        )
         return
 
     out = parse_path_flag(rest, "--out", Path("tmp") / "viz.html")
@@ -282,6 +357,7 @@ def cmd_visual(state: ShellState, rest: list[str]) -> None:
 
         if "--no-open" not in rest:
             import webbrowser
+
             webbrowser.open(f"file://{viz_path.resolve()}")
     except Exception as exc:
         state.ui.error(f"Visualization failed: {exc}")
@@ -292,6 +368,8 @@ def _ensure_graph(state: ShellState) -> bool:
     Guard helper to ensure commands run with a loaded graph.
     """
     if state.loaded_graph is None:
-        state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
+        state.ui.warn(
+            "No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first."
+        )
         return False
     return True

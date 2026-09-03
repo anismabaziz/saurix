@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Discovery queries — single owner for all Graph queries.
 
@@ -8,13 +6,17 @@ This module merges the former `basic` and `traversal` splits so that
 `neighborhood` live together and share symbol resolution.
 """
 
+from __future__ import annotations
+
 from collections import defaultdict, deque
 from typing import Any
 
 from ..core.graph import GraphStore
 
 
-def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[str, str]]:
+def find_symbol(
+    graph: GraphStore, needle: str, limit: int = 20
+) -> list[dict[str, str]]:
     """
     Fuzzy search symbols by substring of name or id.
     """
@@ -23,7 +25,14 @@ def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[st
 
     for node in graph.nodes.values():
         if q in node.name.lower() or q in node.id.lower():
-            rows.append({"id": node.id, "type": node.type, "name": node.name, "file": node.file or ""})
+            rows.append(
+                {
+                    "id": node.id,
+                    "type": node.type,
+                    "name": node.name,
+                    "file": node.file or "",
+                }
+            )
 
     rows.sort(key=lambda r: (r["type"], r["id"]))
     return rows[:limit]
@@ -58,7 +67,8 @@ def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[
 
 def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
     """
-    Find CALLS edges targeting `symbol`, sharing exact resolution with traversal queries.
+    Find CALLS edges targeting `symbol`, sharing exact resolution with
+    traversal queries.
     """
     # Use exact resolution only to preserve pre-collapse semantics (no fuzzy callers)
     exact_ids = _resolve_exact_ids(graph, symbol)
@@ -107,7 +117,9 @@ def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     return rows[:limit]
 
 
-def related_files(graph: GraphStore, file_path: str, depth: int = 2, limit: int = 100) -> list[str]:
+def related_files(
+    graph: GraphStore, file_path: str, depth: int = 2, limit: int = 100
+) -> list[str]:
     """
     Find files related to `file_path` via undirected graph neighborhood.
     """

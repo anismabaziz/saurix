@@ -10,7 +10,6 @@ import asyncio
 
 from saurix.agents.mcp.server import create_server
 
-
 EXPECTED_TOOLS = {
     "index_repo",
     "stats",

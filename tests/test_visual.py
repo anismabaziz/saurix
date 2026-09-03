@@ -19,10 +19,36 @@ def _mini_graph() -> GraphStore:
     Return a tiny graph with a function calling another.
     """
     graph = GraphStore()
-    graph.add_node(Node(id="python://a", type="function", language="python", name="alpha", file="a.py", line=1))
-    graph.add_node(Node(id="python://b", type="function", language="python", name="beta", file="b.py", line=1))
+    graph.add_node(
+        Node(
+            id="python://a",
+            type="function",
+            language="python",
+            name="alpha",
+            file="a.py",
+            line=1,
+        )
+    )
+    graph.add_node(
+        Node(
+            id="python://b",
+            type="function",
+            language="python",
+            name="beta",
+            file="b.py",
+            line=1,
+        )
+    )
     graph.add_edge(
-        Edge(type="CALLS", source="python://a", target="python://b", language="python", confidence="high", file="a.py", line=2)
+        Edge(
+            type="CALLS",
+            source="python://a",
+            target="python://b",
+            language="python",
+            confidence="high",
+            file="a.py",
+            line=2,
+        )
     )
     return graph
 

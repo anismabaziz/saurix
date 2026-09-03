@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
-
-import logging
 
 logger = logging.getLogger(__name__)
 

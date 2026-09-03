@@ -1,11 +1,10 @@
 """
 Tests for Python extractor.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-
-import pytest
 
 from saurix.analysis.python_extractor import PythonExtractor
 from saurix.core.graph import GraphStore
@@ -34,7 +33,9 @@ class MyClass:
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "test_module.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "test_module.py", graph=graph
+        )
 
         # Check module node exists
         assert "python://test_module" in graph.nodes
@@ -54,7 +55,9 @@ async def async_func():
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "funcs.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "funcs.py", graph=graph
+        )
 
         # Check function nodes
         assert "python://funcs:standalone_func" in graph.nodes
@@ -79,7 +82,9 @@ class DerivedClass(BaseClass):
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "classes.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "classes.py", graph=graph
+        )
 
         # Check class node
         assert "python://classes:BaseClass" in graph.nodes
@@ -103,7 +108,9 @@ from typing import List, Dict
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "imports.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "imports.py", graph=graph
+        )
 
         # Check import edges
         import_edges = [e for e in graph.edges if e.type == "IMPORTS"]
@@ -134,7 +141,9 @@ def caller():
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "calls.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "calls.py", graph=graph
+        )
 
         # Check call edges
         call_edges = [e for e in graph.edges if e.type == "CALLS"]
@@ -164,7 +173,9 @@ class Calculator:
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "methods.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "methods.py", graph=graph
+        )
 
         # Should have method nodes
         assert "python://methods:Calculator.add" in graph.nodes
@@ -185,7 +196,9 @@ class TestPythonExtractorEdgeCases:
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "empty.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "empty.py", graph=graph
+        )
 
         # Should still create module node
         assert "python://empty" in graph.nodes
@@ -201,7 +214,9 @@ def bad_syntax(
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "broken.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "broken.py", graph=graph
+        )
 
         # Should create error node
         assert "python://broken.py" in graph.nodes
@@ -221,7 +236,9 @@ def outer():
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "nested.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "nested.py", graph=graph
+        )
 
         # Should extract outer function
         assert "python://nested:outer" in graph.nodes
@@ -242,7 +259,9 @@ from .. import sibling
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "pkg" / "submodule.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "pkg" / "submodule.py", graph=graph
+        )
 
         # Module should be created
         assert "python://pkg.submodule" in graph.nodes
@@ -270,7 +289,9 @@ def build_path(*parts):
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "main.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "main.py", graph=graph
+        )
 
         # Should have imports recorded
         import_edges = [e for e in graph.edges if e.type == "IMPORTS"]
@@ -293,7 +314,9 @@ def main():
 
         graph = GraphStore()
         extractor = PythonExtractor()
-        extractor.extract(repo_root=tmp_path, file_path=tmp_path / "locals.py", graph=graph)
+        extractor.extract(
+            repo_root=tmp_path, file_path=tmp_path / "locals.py", graph=graph
+        )
 
         # Check that main calls utility
         call_edges = [e for e in graph.edges if e.type == "CALLS"]

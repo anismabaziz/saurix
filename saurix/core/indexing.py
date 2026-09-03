@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Indexing Orchestration Module
 
@@ -8,9 +6,11 @@ class, which manages the lifecycle of repository scanning, file language detecti
 and dispatching work to language-specific extractors.
 """
 
+from __future__ import annotations
+
 import logging
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 
 from .config import config
 from .graph import GraphStore
@@ -43,7 +43,10 @@ class IndexResult:
     """
     Container for the results of an indexing operation.
     """
-    def __init__(self, graph: GraphStore, scanned_files: int, indexed_files: int) -> None:
+
+    def __init__(
+        self, graph: GraphStore, scanned_files: int, indexed_files: int
+    ) -> None:
         self.graph = graph
         self.scanned_files = scanned_files
         self.indexed_files = indexed_files
@@ -59,6 +62,7 @@ class RepositoryIndexer:
     - Mapping files to appropriate Extractor implementations.
     - Merging partial graphs from individual files into the global GraphStore.
     """
+
     def __init__(
         self,
         repo_root: Path,
@@ -139,13 +143,21 @@ class RepositoryIndexer:
             if extractor is None:
                 continue
             # Identify which parsing strategy is actually being used
-            parser_mode = "ast" if lang == "python" else (
-                "tree-sitter" if getattr(extractor, "_parser", None) else "regex-fallback"
+            parser_mode = (
+                "ast"
+                if lang == "python"
+                else (
+                    "tree-sitter"
+                    if getattr(extractor, "_parser", None)
+                    else "regex-fallback"
+                )
             )
 
             temp_graph = GraphStore()
             try:
-                extractor.extract(repo_root=self.root, file_path=file_path, graph=temp_graph)
+                extractor.extract(
+                    repo_root=self.root, file_path=file_path, graph=temp_graph
+                )
                 # Merge temp graph into main graph
                 for node in temp_graph.nodes.values():
                     self.graph.add_node(node)
@@ -175,7 +187,9 @@ class RepositoryIndexer:
 
         self.graph.set_metadata("extraction_coverage", coverage)
 
-        return IndexResult(graph=self.graph, scanned_files=len(files), indexed_files=indexed)
+        return IndexResult(
+            graph=self.graph, scanned_files=len(files), indexed_files=indexed
+        )
 
 
 def build_graph(
