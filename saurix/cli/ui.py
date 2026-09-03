@@ -180,7 +180,6 @@ def _render_unified_stats_table(stats: dict[str, object], ui: UI) -> None:
     _append_dict_rows(table, "Node Types", stats.get("node_types", {}))
     _append_dict_rows(table, "Edge Types", stats.get("edge_types", {}))
     _append_dict_rows(table, "Languages", stats.get("languages", {}))
-    _append_incremental_rows(table, "Incremental Cache", stats.get("incremental_cache", {}))
 
     ui.print(table)
 
@@ -211,13 +210,6 @@ def _append_coverage_rows(table: Table, section: str, data: object) -> None:
         table.add_row(section, f"{lang}.parser_mode", str(row.get("parser_mode", "unknown")))
 
 
-def _append_incremental_rows(table: Table, section: str, data: object) -> None:
-    if not isinstance(data, dict):
-        return
-    for key in ["enabled", "cache_hits", "reindexed_files", "deleted_files", "cache_path"]:
-        table.add_row(section, key, str(data.get(key, "-")))
-
-
 def render_index_summary(summary: dict[str, object], ui: UI) -> None:
     table = Table(title="Index Summary", header_style="bold cyan")
     table.add_column("Metric", style="bold")
@@ -231,9 +223,6 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
         "indexed_files",
         "nodes",
         "edges",
-        "cache_hits",
-        "reindexed_files",
-        "deleted_files",
     ]:
         if key in summary:
             label = key.replace("_", " ").title()

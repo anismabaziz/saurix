@@ -80,11 +80,6 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
     }
     if excludes:
         summary["excluded_dirs"] = ", ".join(sorted(excludes))
-    inc = stats.get("incremental_cache", {}) if isinstance(stats, dict) else {}
-    if isinstance(inc, dict):
-        summary["cache_hits"] = inc.get("cache_hits", 0)
-        summary["reindexed_files"] = inc.get("reindexed_files", 0)
-        summary["deleted_files"] = inc.get("deleted_files", 0)
     render_index_summary(summary, state.ui)
 
 

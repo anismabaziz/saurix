@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 
-from saurix.core.cache import DEFAULT_CACHE_PATH
 from saurix.core.indexing import build_graph
 
 
@@ -17,8 +16,6 @@ class BenchRow:
     full_seconds: float
     incremental_seconds: float
     speedup_x: float
-    cache_hits: int
-    reindexed_files: int
 
 
 REPOS: list[tuple[str, str, str]] = [
@@ -47,7 +44,6 @@ def main() -> None:
         full_s = full[0]
         inc_s = inc[0]
         speedup = round(full_s / inc_s, 2) if inc_s > 0 else 0.0
-        inc_meta = inc[1].get("incremental_cache", {}) if isinstance(inc[1], dict) else {}
 
         rows.append(
             BenchRow(
@@ -56,8 +52,6 @@ def main() -> None:
                 full_seconds=round(full_s, 2),
                 incremental_seconds=round(inc_s, 2),
                 speedup_x=speedup,
-                cache_hits=int(inc_meta.get("cache_hits", 0)),
-                reindexed_files=int(inc_meta.get("reindexed_files", 0)),
             )
         )
 
@@ -83,9 +77,6 @@ def ensure_clone(repos_dir: Path, slug: str, url: str) -> Path:
 
 
 def clear_repo_cache(repo_root: Path) -> None:
-    cache_file = repo_root / DEFAULT_CACHE_PATH
-    if cache_file.exists():
-        cache_file.unlink()
     bench_graph = repo_root / "tmp" / "saurix.graph.json"
     if bench_graph.exists():
         bench_graph.unlink()
@@ -106,14 +97,14 @@ def build_markdown(rows: list[BenchRow]) -> str:
     lines = [
         "# Benchmark Results",
         "",
-        "Cold run = first run after cache clear. Warm run = immediate second run on same repo.",
+        "First run and second run on same repo (straight redo, no cache).",
         "",
-        "| Repo | Lang | Full Index (s) | Incremental Re-index (s) | Speedup | Cache Hits | Reindexed Files |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Repo | Lang | Full Index (s) | Re-index (s) | Speedup |",
+        "| --- | --- | ---: | ---: | ---: |",
     ]
     for row in rows:
         lines.append(
-            f"| `{row.repo}` | {row.language_hint} | {row.full_seconds:.2f} | {row.incremental_seconds:.2f} | {row.speedup_x:.2f}x | {row.cache_hits} | {row.reindexed_files} |"
+            f"| `{row.repo}` | {row.language_hint} | {row.full_seconds:.2f} | {row.incremental_seconds:.2f} | {row.speedup_x:.2f}x |"
         )
     return "\n".join(lines)
 
