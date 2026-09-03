@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 MCP server setup and tool registration for Saurix.
 """
+
+from __future__ import annotations
 
 from . import handlers
 
@@ -15,7 +15,8 @@ def create_server():
         from mcp.server.fastmcp import FastMCP
     except Exception as exc:  # pragma: no cover
         raise RuntimeError(
-            "MCP SDK is not installed. Run `uv add mcp` or install project dependencies."
+            "MCP SDK is not installed. Run `uv add mcp` or install project "
+            "dependencies."
         ) from exc
 
     app = FastMCP("saurix")
@@ -65,7 +66,9 @@ def create_server():
         """
         Find shortest directed path between two symbols.
         """
-        return handlers.path_between(graph=graph, source=source, target=target, max_depth=max_depth)
+        return handlers.path_between(
+            graph=graph, source=source, target=target, max_depth=max_depth
+        )
 
     @app.tool()
     def impact_of_symbol(

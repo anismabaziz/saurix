@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Typed MCP response envelope used by all tool handlers.
 """
+
+from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from typing import Any
@@ -13,6 +13,7 @@ class ToolError:
     """
     Structured tool error payload for machine-friendly failures.
     """
+
     code: str
     message: str
 
@@ -22,6 +23,7 @@ class ToolResult:
     """
     Unified success/error wrapper returned by MCP handlers.
     """
+
     ok: bool
     data: Any = None
     error: ToolError | None = None

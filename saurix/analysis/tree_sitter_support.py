@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterator
 import warnings
+from collections.abc import Iterator
 
 
 def get_parser(language: str):
@@ -38,7 +38,11 @@ def text_of(source: bytes, node) -> str:
 
 def stripped_string(source: bytes, node) -> str:
     text = text_of(source, node).strip()
-    if text.startswith(("'", '"', "`")) and text.endswith(("'", '"', "`")) and len(text) >= 2:
+    if (
+        text.startswith(("'", '"', "`"))
+        and text.endswith(("'", '"', "`"))
+        and len(text) >= 2
+    ):
         return text[1:-1]
     return text
 

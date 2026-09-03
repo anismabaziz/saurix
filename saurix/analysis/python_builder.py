@@ -86,7 +86,10 @@ def add_function(
             name=fn_node.name,
             file=rel,
             line=getattr(fn_node, "lineno", None),
-            metadata={"args": [arg.arg for arg in fn_node.args.args], "async": isinstance(fn_node, ast.AsyncFunctionDef)},
+            metadata={
+                "args": [arg.arg for arg in fn_node.args.args],
+                "async": isinstance(fn_node, ast.AsyncFunctionDef),
+            },
         )
     )
     graph.add_edge(
@@ -115,7 +118,9 @@ def add_function(
             class_name=class_name,
             class_methods=class_methods,
         )
-        graph.add_node(Node(id=resolved, type="symbol", language=language, name=raw_name))
+        graph.add_node(
+            Node(id=resolved, type="symbol", language=language, name=raw_name)
+        )
         graph.add_edge(
             Edge(
                 type="CALLS",

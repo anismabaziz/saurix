@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Graph Storage Module
 
@@ -7,6 +5,8 @@ This module defines the GraphStore class, which serves as the central data struc
 for the Saurix knowledge graph. It manages nodes, edges, and their metadata,
 providing efficient indexing for graph traversal and analysis.
 """
+
+from __future__ import annotations
 
 import json
 from dataclasses import asdict
@@ -18,22 +18,23 @@ from .models import Edge, Node
 class GraphStore:
     """
     An in-memory graph storage engine with persistence capabilities.
-    
+
     GraphStore maintains a collection of Nodes and Edges, and builds several
     lookup indexes on-the-fly to ensure that traversal operations (like finding
     all callers of a function) are O(1) or O(K) where K is the number of results.
     """
+
     def __init__(self) -> None:
         # Primary storage
         self._nodes: dict[str, Node] = {}
         self._edges: list[Edge] = []
         self._metadata: dict[str, object] = {}
-        
+
         # Performance Indexes
         self._edges_by_source: dict[str, list[Edge]] = {}
         self._edges_by_target: dict[str, list[Edge]] = {}
         self._edges_by_type: dict[str, list[Edge]] = {}
-        
+
         # Name index for nodes (one name may map to multiple IDs in different files)
         self._nodes_by_name: dict[str, list[str]] = {}
 
@@ -100,7 +101,7 @@ class GraphStore:
         Adds an edge to the store and updates adjacency indexes.
         """
         self._edges.append(edge)
-        
+
         # Update source index
         if edge.source not in self._edges_by_source:
             self._edges_by_source[edge.source] = []
@@ -122,7 +123,9 @@ class GraphStore:
         """
         return len(self._nodes), len(self._edges)
 
-    def contribution_since(self, start: tuple[int, int]) -> tuple[list[Node], list[Edge]]:
+    def contribution_since(
+        self, start: tuple[int, int]
+    ) -> tuple[list[Node], list[Edge]]:
         """
         Returns the nodes and edges added to the store since the given snapshot.
         """
@@ -170,7 +173,7 @@ class GraphStore:
             "confidence_counts": confidence_counts,
             "confidence_percentages": confidence_percentages,
         }
-        
+
         # Include optional metadata fields if present
         if "extraction_coverage" in self._metadata:
             stats["extraction_coverage"] = self._metadata["extraction_coverage"]
@@ -197,7 +200,7 @@ class GraphStore:
             json.dump(self.to_dict(), f, indent=2, sort_keys=True)
 
     @classmethod
-    def from_json(cls, path: Path) -> "GraphStore":
+    def from_json(cls, path: Path) -> GraphStore:
         """
         Loads a GraphStore from a JSON file.
         """
@@ -208,7 +211,11 @@ class GraphStore:
         schema_version = payload.get("schema_version", "unknown")
         if schema_version != "1.0.0":
             import warnings
-            warnings.warn(f"Graph schema version mismatch: expected 1.0.0, got {schema_version}", UserWarning)
+
+            warnings.warn(
+                f"Graph schema version mismatch: expected 1.0.0, got {schema_version}",
+                UserWarning,
+            )
 
         graph = cls()
         # Restore metadata

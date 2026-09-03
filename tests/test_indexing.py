@@ -1,4 +1,6 @@
-"""Indexing-level checks: unsupported (stub) languages are skipped and no cache is written.
+"""
+Indexing-level checks: unsupported (stub) languages are skipped and no cache is
+written.
 
 Confirms the simplifications landed in indexing: files without a real Extractor
 produce no placeholder Symbols, and indexing is a straight scan that never

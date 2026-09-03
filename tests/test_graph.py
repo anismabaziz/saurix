@@ -1,6 +1,7 @@
 """
 Tests for GraphStore.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -37,8 +38,22 @@ class TestGraphStoreBasics:
         """
         Test that duplicate nodes are not added.
         """
-        node1 = Node(id="python://test", type="module", language="python", name="test", file="test.py", line=1)
-        node2 = Node(id="python://test", type="function", language="python", name="other", file="other.py", line=1)
+        node1 = Node(
+            id="python://test",
+            type="module",
+            language="python",
+            name="test",
+            file="test.py",
+            line=1,
+        )
+        node2 = Node(
+            id="python://test",
+            type="function",
+            language="python",
+            name="other",
+            file="other.py",
+            line=1,
+        )
 
         empty_graph.add_node(node1)
         empty_graph.add_node(node2)
@@ -74,11 +89,35 @@ class TestGraphStoreBasics:
         assert snapshot == (0, 0)
 
         # Add nodes and edges
-        node1 = Node(id="python://a", type="module", language="python", name="a", file="a.py", line=1)
-        node2 = Node(id="python://b", type="function", language="python", name="b", file="a.py", line=5)
+        node1 = Node(
+            id="python://a",
+            type="module",
+            language="python",
+            name="a",
+            file="a.py",
+            line=1,
+        )
+        node2 = Node(
+            id="python://b",
+            type="function",
+            language="python",
+            name="b",
+            file="a.py",
+            line=5,
+        )
         empty_graph.add_node(node1)
         empty_graph.add_node(node2)
-        empty_graph.add_edge(Edge(type="CONTAINS", source="python://a", target="python://b", language="python", confidence="high", file="a.py", line=5))
+        empty_graph.add_edge(
+            Edge(
+                type="CONTAINS",
+                source="python://a",
+                target="python://b",
+                language="python",
+                confidence="high",
+                file="a.py",
+                line=5,
+            )
+        )
 
         # Get contribution since snapshot
         nodes, edges = empty_graph.contribution_since(snapshot)
@@ -145,7 +184,9 @@ class TestGraphStoreSerialization:
         assert len(data["edges"]) == 7
         assert "metadata" in data
 
-    def test_write_and_read_json(self, sample_graph: GraphStore, tmp_path: Path) -> None:
+    def test_write_and_read_json(
+        self, sample_graph: GraphStore, tmp_path: Path
+    ) -> None:
         """
         Test writing and reading graph JSON.
         """
@@ -169,7 +210,9 @@ class TestGraphStoreSerialization:
         with pytest.raises(FileNotFoundError):
             GraphStore.from_json(tmp_path / "nonexistent.json")
 
-    def test_metadata_persistence(self, sample_graph: GraphStore, tmp_path: Path) -> None:
+    def test_metadata_persistence(
+        self, sample_graph: GraphStore, tmp_path: Path
+    ) -> None:
         """
         Test that metadata survives serialization.
         """

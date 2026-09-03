@@ -1,37 +1,39 @@
-from __future__ import annotations
-
 """
 Python Code Extractor
 
-This module implements a robust Python source code analyzer using the native 'ast' library.
-It extracts structural components (Modules, Classes, Functions) and behavioral 
-relationships (Imports, Function Calls, Class Inheritance) to populate the knowledge graph.
+This module implements a robust Python source code analyzer using the native
+'ast' library. It extracts structural components (Modules, Classes, Functions)
+and behavioral relationships (Imports, Function Calls, Class Inheritance) to
+populate the knowledge graph.
 """
+
+from __future__ import annotations
 
 import ast
 from pathlib import Path
 
+from ..core.graph import GraphStore
+from ..core.models import Edge, Node
 from .base import Extractor
 from .python_builder import add_class, add_function
 from .python_utils import name_of, resolve_name
-from ..core.graph import GraphStore
-from ..core.models import Edge, Node
 
 
 class PythonExtractor(Extractor):
     """
     Language-specific extractor for Python.
-    
+
     Uses standard AST parsing to identify symbols and their interactions.
-    Handles top-level module structure, nested classes/functions, and 
+    Handles top-level module structure, nested classes/functions, and
     cross-module dependencies via import analysis.
     """
+
     language = "python"
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
         """
         Parses a single Python file and emits nodes/edges into the global GraphStore.
-        
+
         Args:
             repo_root: The absolute path to the repository root.
             file_path: The absolute path to the file being indexed.
@@ -39,12 +41,13 @@ class PythonExtractor(Extractor):
         """
         rel = file_path.relative_to(repo_root).as_posix()
         source = file_path.read_text(encoding="utf-8", errors="replace")
-        
+
         # Initial parse attempt
         try:
             tree = ast.parse(source)
         except SyntaxError as exc:
-            # On syntax error, record a 'file' node with error metadata but skip symbol extraction
+            # On syntax error, record a 'file' node with error metadata but
+            # skip symbol extraction
             graph.add_node(
                 Node(
                     id=f"python://{rel}",
@@ -60,11 +63,22 @@ class PythonExtractor(Extractor):
         # Map file to a Python module identifier
         module_name = rel[:-3].replace("/", ".") if rel.endswith(".py") else rel
         module_id = f"python://{module_name}"
-        graph.add_node(Node(id=module_id, type="module", language=self.language, name=module_name, file=rel, line=1))
+        graph.add_node(
+            Node(
+                id=module_id,
+                type="module",
+                language=self.language,
+                name=module_name,
+                file=rel,
+                line=1,
+            )
+        )
 
         # Pass 1: Build local context (imports and available local names)
-        imports, local_functions, class_methods = self._collect_context(tree, graph, module_id, rel)
-        
+        imports, local_functions, class_methods = self._collect_context(
+            tree, graph, module_id, rel
+        )
+
         # Pass 2: Deep symbol extraction
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -94,7 +108,9 @@ class PythonExtractor(Extractor):
                     class_methods=methods,
                 )
                 # Handle class inheritance hierarchy
-                self._add_inherits(graph, module_id, rel, node, imports, local_functions, methods)
+                self._add_inherits(
+                    graph, module_id, rel, node, imports, local_functions, methods
+                )
 
     def _collect_context(
         self,
@@ -105,7 +121,7 @@ class PythonExtractor(Extractor):
     ) -> tuple[dict[str, str], set[str], dict[str, set[str]]]:
         """
         Scans the module to build lookup tables for name resolution.
-        
+
         Returns:
             - imports: Map of alias names to fully qualified targets.
             - local_functions: Set of function names defined in the module scope.
@@ -123,9 +139,26 @@ class PythonExtractor(Extractor):
                     alias_name = alias.asname or alias.name.split(".")[0]
                     imports[alias_name] = target
                     target_id = f"python://{target}"
-                    graph.add_node(Node(id=target_id, type="module", language=self.language, name=target))
-                    graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=getattr(node, "lineno", None)))
-                    
+                    graph.add_node(
+                        Node(
+                            id=target_id,
+                            type="module",
+                            language=self.language,
+                            name=target,
+                        )
+                    )
+                    graph.add_edge(
+                        Edge(
+                            type="IMPORTS",
+                            source=module_id,
+                            target=target_id,
+                            language=self.language,
+                            confidence="high",
+                            file=rel,
+                            line=getattr(node, "lineno", None),
+                        )
+                    )
+
             elif isinstance(node, ast.ImportFrom):
                 # Handles 'from x import y as z'
                 module = node.module or ""
@@ -135,14 +168,35 @@ class PythonExtractor(Extractor):
                     resolved = f"{module}.{imported_name}" if module else imported_name
                     imports[alias_name] = resolved
                     target_id = f"python://{resolved}"
-                    graph.add_node(Node(id=target_id, type="symbol", language=self.language, name=resolved))
-                    graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=getattr(node, "lineno", None)))
-                    
+                    graph.add_node(
+                        Node(
+                            id=target_id,
+                            type="symbol",
+                            language=self.language,
+                            name=resolved,
+                        )
+                    )
+                    graph.add_edge(
+                        Edge(
+                            type="IMPORTS",
+                            source=module_id,
+                            target=target_id,
+                            language=self.language,
+                            confidence="high",
+                            file=rel,
+                            line=getattr(node, "lineno", None),
+                        )
+                    )
+
             elif isinstance(node, ast.FunctionDef):
                 local_functions.add(node.name)
-                
+
             elif isinstance(node, ast.ClassDef):
-                methods = {item.name for item in node.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))}
+                methods = {
+                    item.name
+                    for item in node.body
+                    if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                }
                 class_methods[node.name] = methods
 
         return imports, local_functions, class_methods
@@ -158,7 +212,8 @@ class PythonExtractor(Extractor):
         class_methods: set[str],
     ) -> None:
         """
-        Emits INHERITS edges by resolving base class names against the collected context.
+        Emits INHERITS edges by resolving base class names against the
+        collected context.
         """
         class_id = f"{module_id}:{class_node.name}"
         for base in class_node.bases:
@@ -174,7 +229,9 @@ class PythonExtractor(Extractor):
                 class_name=class_node.name,
                 class_methods=class_methods,
             )
-            graph.add_node(Node(id=resolved, type="class", language=self.language, name=base_name))
+            graph.add_node(
+                Node(id=resolved, type="class", language=self.language, name=base_name)
+            )
             graph.add_edge(
                 Edge(
                     type="INHERITS",

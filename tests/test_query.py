@@ -1,13 +1,19 @@
 """
 Tests for query operations.
 """
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from saurix.core.graph import GraphStore
 from saurix.core.models import Edge, Node
-from saurix.discovery import callees_of, callers_of, find_symbol, impact_of, related_files, resolve_symbol_ids, shortest_path
+from saurix.discovery import (
+    callers_of,
+    find_symbol,
+    impact_of,
+    related_files,
+    resolve_symbol_ids,
+    shortest_path,
+)
 
 
 class TestFindSymbol:
@@ -194,9 +200,7 @@ class TestShortestPath:
         Test finding direct path.
         """
         path = shortest_path(
-            sample_graph,
-            "python://module1:func1",
-            "python://module1:func2"
+            sample_graph, "python://module1:func1", "python://module1:func2"
         )
 
         assert len(path) == 2
@@ -209,9 +213,7 @@ class TestShortestPath:
         Test finding indirect path.
         """
         path = shortest_path(
-            sample_graph,
-            "python://module2:Class1.method1",
-            "python://module1:func2"
+            sample_graph, "python://module2:Class1.method1", "python://module1:func2"
         )
 
         # method1 -> func1 -> func2
@@ -224,11 +226,7 @@ class TestShortestPath:
         """
         Test when no path exists.
         """
-        path = shortest_path(
-            sample_graph,
-            "python://module2",
-            "python://nonexistent"
-        )
+        path = shortest_path(sample_graph, "python://module2", "python://nonexistent")
         assert path == []
 
     def test_max_depth_limit(self, sample_graph: GraphStore) -> None:
@@ -239,7 +237,7 @@ class TestShortestPath:
             sample_graph,
             "python://module2:Class1.method1",
             "python://module1:func2",
-            max_depth=1
+            max_depth=1,
         )
         # Should not find path with depth 1
         assert path == []
@@ -249,10 +247,7 @@ class TestShortestPath:
         Test filtering by edge types.
         """
         path = shortest_path(
-            sample_graph,
-            "python://module2",
-            "python://module1",
-            edge_types={"IMPORTS"}
+            sample_graph, "python://module2", "python://module1", edge_types={"IMPORTS"}
         )
 
         assert len(path) == 2
@@ -281,17 +276,62 @@ class TestTraversalEdgeCases:
 
         # Create circular call: a -> b -> c -> a
         nodes = [
-            Node(id="a", type="function", language="python", name="a", file="test.py", line=1),
-            Node(id="b", type="function", language="python", name="b", file="test.py", line=2),
-            Node(id="c", type="function", language="python", name="c", file="test.py", line=3),
+            Node(
+                id="a",
+                type="function",
+                language="python",
+                name="a",
+                file="test.py",
+                line=1,
+            ),
+            Node(
+                id="b",
+                type="function",
+                language="python",
+                name="b",
+                file="test.py",
+                line=2,
+            ),
+            Node(
+                id="c",
+                type="function",
+                language="python",
+                name="c",
+                file="test.py",
+                line=3,
+            ),
         ]
         for n in nodes:
             graph.add_node(n)
 
         edges = [
-            Edge(type="CALLS", source="a", target="b", language="python", confidence="high", file="test.py", line=1),
-            Edge(type="CALLS", source="b", target="c", language="python", confidence="high", file="test.py", line=2),
-            Edge(type="CALLS", source="c", target="a", language="python", confidence="high", file="test.py", line=3),
+            Edge(
+                type="CALLS",
+                source="a",
+                target="b",
+                language="python",
+                confidence="high",
+                file="test.py",
+                line=1,
+            ),
+            Edge(
+                type="CALLS",
+                source="b",
+                target="c",
+                language="python",
+                confidence="high",
+                file="test.py",
+                line=2,
+            ),
+            Edge(
+                type="CALLS",
+                source="c",
+                target="a",
+                language="python",
+                confidence="high",
+                file="test.py",
+                line=3,
+            ),
         ]
         for e in edges:
             graph.add_edge(e)

@@ -10,7 +10,6 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-
 ASCII_LOGO = r"""
    ______          __        ___   __  __
   / ____/___  ____/ /__     /   | / /_/ /___ ______
@@ -25,6 +24,7 @@ class UI:
     DIM = "dim"
     BLUE = "blue"
     CYAN = "cyan"
+
     def __init__(
         self,
         console: Console | None = None,
@@ -149,9 +149,12 @@ def interactive_help() -> str:
             "  find <name> [--limit N]                     Find symbol by fuzzy name",
             "  callers <symbol> [--limit N]                Show callers of a symbol",
             "  related <file> [--depth N] [--limit N]      Show related files",
-            "  path <from> <to> [--max-depth N]            Trace shortest path between symbols",
-            "  impact <symbol> [--depth N] [--limit N]     Show blast radius for symbol changes",
-            "  visual [--out PATH] [--limit N]             Generate D3 visualization HTML",
+            "  path <from> <to> [--max-depth N]            Trace shortest path "
+            "between symbols",
+            "  impact <symbol> [--depth N] [--limit N]     Show blast radius for "
+            "symbol changes",
+            "  visual [--out PATH] [--limit N]             Generate D3 "
+            "visualization HTML",
             "  where                                       Show current graph path",
             "  raw on|off                                  Toggle JSON raw output",
             "  clear                                       Clear the screen",
@@ -173,8 +176,12 @@ def _render_unified_stats_table(stats: dict[str, object], ui: UI) -> None:
     table.add_column("Value", justify="right")
 
     _append_dict_rows(table, "Confidence (count)", stats.get("confidence_counts", {}))
-    _append_percent_rows(table, "Confidence (percent)", stats.get("confidence_percentages", {}))
-    _append_coverage_rows(table, "Extraction Coverage", stats.get("extraction_coverage", {}))
+    _append_percent_rows(
+        table, "Confidence (percent)", stats.get("confidence_percentages", {})
+    )
+    _append_coverage_rows(
+        table, "Extraction Coverage", stats.get("extraction_coverage", {})
+    )
     _append_dict_rows(table, "Node Types", stats.get("node_types", {}))
     _append_dict_rows(table, "Edge Types", stats.get("edge_types", {}))
     _append_dict_rows(table, "Languages", stats.get("languages", {}))
@@ -203,9 +210,15 @@ def _append_coverage_rows(table: Table, section: str, data: object) -> None:
         if not isinstance(row, dict):
             continue
         table.add_row(section, f"{lang}.files_seen", str(row.get("files_seen", 0)))
-        table.add_row(section, f"{lang}.files_indexed", str(row.get("files_indexed", 0)))
-        table.add_row(section, f"{lang}.coverage_percent", f"{row.get('coverage_percent', 0.0)}%")
-        table.add_row(section, f"{lang}.parser_mode", str(row.get("parser_mode", "unknown")))
+        table.add_row(
+            section, f"{lang}.files_indexed", str(row.get("files_indexed", 0))
+        )
+        table.add_row(
+            section, f"{lang}.coverage_percent", f"{row.get('coverage_percent', 0.0)}%"
+        )
+        table.add_row(
+            section, f"{lang}.parser_mode", str(row.get("parser_mode", "unknown"))
+        )
 
 
 def render_index_summary(summary: dict[str, object], ui: UI) -> None:
@@ -228,7 +241,9 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
     ui.print(table)
 
 
-def render_table(title: str, rows: list[dict[str, str]], columns: list[tuple[str, str]], ui: UI) -> None:
+def render_table(
+    title: str, rows: list[dict[str, str]], columns: list[tuple[str, str]], ui: UI
+) -> None:
     if not rows:
         ui.warn("No results.")
         return
