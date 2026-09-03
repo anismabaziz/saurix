@@ -39,38 +39,54 @@ class GraphStore:
 
     @property
     def nodes(self) -> dict[str, Node]:
-        """Returns the raw node mapping (ID -> Node)."""
+        """
+        Returns the raw node mapping (ID -> Node).
+        """
         return self._nodes
 
     @property
     def edges(self) -> list[Edge]:
-        """Returns the list of all edges in the graph."""
+        """
+        Returns the list of all edges in the graph.
+        """
         return self._edges
 
     def get_edges_from(self, node_id: str) -> list[Edge]:
-        """Returns all edges where the given node_id is the source."""
+        """
+        Returns all edges where the given node_id is the source.
+        """
         return self._edges_by_source.get(node_id, [])
 
     def get_edges_to(self, node_id: str) -> list[Edge]:
-        """Returns all edges where the given node_id is the target."""
+        """
+        Returns all edges where the given node_id is the target.
+        """
         return self._edges_by_target.get(node_id, [])
 
     def get_edges_by_type(self, edge_type: str) -> list[Edge]:
-        """Returns all edges of a specific type (e.g., 'CALLS', 'IMPORTS')."""
+        """
+        Returns all edges of a specific type (e.g., 'CALLS', 'IMPORTS').
+        """
         return self._edges_by_type.get(edge_type, [])
 
     def get_nodes_by_name(self, name: str) -> list[Node]:
-        """Returns all nodes matching a specific name string across all files."""
+        """
+        Returns all nodes matching a specific name string across all files.
+        """
         ids = self._nodes_by_name.get(name, [])
         return [self._nodes[i] for i in ids if i in self._nodes]
 
     @property
     def metadata(self) -> dict[str, object]:
-        """Returns the global metadata dictionary for this graph."""
+        """
+        Returns the global metadata dictionary for this graph.
+        """
         return self._metadata
 
     def add_node(self, node: Node) -> None:
-        """Adds a node to the store and updates relevant indexes."""
+        """
+        Adds a node to the store and updates relevant indexes.
+        """
         if node.id not in self._nodes:
             self._nodes[node.id] = node
             # Update the name-based index
@@ -80,7 +96,9 @@ class GraphStore:
                 self._nodes_by_name[node.name].append(node.id)
 
     def add_edge(self, edge: Edge) -> None:
-        """Adds an edge to the store and updates adjacency indexes."""
+        """
+        Adds an edge to the store and updates adjacency indexes.
+        """
         self._edges.append(edge)
         
         # Update source index
@@ -99,22 +117,30 @@ class GraphStore:
         self._edges_by_type[edge.type].append(edge)
 
     def snapshot_counts(self) -> tuple[int, int]:
-        """Returns a snapshot of current node/edge counts (used for delta tracking)."""
+        """
+        Returns a snapshot of current node/edge counts (used for delta tracking).
+        """
         return len(self._nodes), len(self._edges)
 
     def contribution_since(self, start: tuple[int, int]) -> tuple[list[Node], list[Edge]]:
-        """Returns the nodes and edges added to the store since the given snapshot."""
+        """
+        Returns the nodes and edges added to the store since the given snapshot.
+        """
         start_nodes, start_edges = start
         nodes = list(self._nodes.values())[start_nodes:]
         edges = self._edges[start_edges:]
         return nodes, edges
 
     def set_metadata(self, key: str, value: object) -> None:
-        """Stores a piece of global metadata in the graph."""
+        """
+        Stores a piece of global metadata in the graph.
+        """
         self._metadata[key] = value
 
     def stats(self) -> dict[str, object]:
-        """Computes comprehensive statistics about the graph's contents."""
+        """
+        Computes comprehensive statistics about the graph's contents.
+        """
         node_types: dict[str, int] = {}
         edge_types: dict[str, int] = {}
         languages: dict[str, int] = {}
@@ -152,7 +178,9 @@ class GraphStore:
         return stats
 
     def to_dict(self) -> dict[str, object]:
-        """Serializes the entire graph to a dictionary for JSON storage."""
+        """
+        Serializes the entire graph to a dictionary for JSON storage.
+        """
         return {
             "schema_version": "1.0.0",
             "metadata": self._metadata,
@@ -161,14 +189,18 @@ class GraphStore:
         }
 
     def write_json(self, path: Path) -> None:
-        """Writes the graph to a JSON file on disk."""
+        """
+        Writes the graph to a JSON file on disk.
+        """
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2, sort_keys=True)
 
     @classmethod
     def from_json(cls, path: Path) -> "GraphStore":
-        """Loads a GraphStore from a JSON file."""
+        """
+        Loads a GraphStore from a JSON file.
+        """
         with path.open("r", encoding="utf-8") as f:
             payload = json.load(f)
 

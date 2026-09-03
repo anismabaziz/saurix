@@ -1,4 +1,6 @@
-"""Pytest fixtures for Saurix tests."""
+"""
+Pytest fixtures for Saurix tests.
+"""
 from __future__ import annotations
 
 import json
@@ -13,13 +15,17 @@ from saurix.core.models import Edge, Node
 
 @pytest.fixture
 def empty_graph() -> GraphStore:
-    """Return an empty graph store."""
+    """
+    Return an empty graph store.
+    """
     return GraphStore()
 
 
 @pytest.fixture
 def sample_graph() -> GraphStore:
-    """Return a populated graph with sample nodes and edges."""
+    """
+    Return a populated graph with sample nodes and edges.
+    """
     graph = GraphStore()
 
     # Add nodes
@@ -54,7 +60,9 @@ def sample_graph() -> GraphStore:
 
 @pytest.fixture
 def temp_graph_file(sample_graph: GraphStore) -> Path:
-    """Create a temporary graph file and return its path."""
+    """
+    Create a temporary graph file and return its path.
+    """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         path = Path(f.name)
         sample_graph.write_json(path)
@@ -63,7 +71,9 @@ def temp_graph_file(sample_graph: GraphStore) -> Path:
 
 @pytest.fixture
 def temp_repo(tmp_path: Path) -> Path:
-    """Create a temporary repository with sample files."""
+    """
+    Create a temporary repository with sample files.
+    """
     # Create Python files
     (tmp_path / "module1.py").write_text("""
 def func1():

@@ -12,7 +12,9 @@ from pathlib import Path
 
 
 def parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
-    """Parse optional integer flag value from command tokens."""
+    """
+    Parse optional integer flag value from command tokens.
+    """
     if flag not in parts:
         return default
     try:
@@ -22,7 +24,9 @@ def parse_int_flag(parts: list[str], flag: str, default: int) -> int | None:
 
 
 def parse_csv_flag(parts: list[str], flag: str) -> set[str] | None:
-    """Parse optional CSV flag (e.g. ``--exclude dir1,dir2``)."""
+    """
+    Parse optional CSV flag (e.g. ``--exclude dir1,dir2``).
+    """
     if flag not in parts:
         return None
     try:
@@ -34,7 +38,9 @@ def parse_csv_flag(parts: list[str], flag: str) -> set[str] | None:
 
 
 def parse_path_flag(parts: list[str], flag: str, default: Path) -> Path:
-    """Parse optional path flag value from command tokens."""
+    """
+    Parse optional path flag value from command tokens.
+    """
     if flag not in parts:
         return default.resolve()
     try:

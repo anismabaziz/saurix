@@ -42,7 +42,9 @@ def normalize_github_clone_url(source: str) -> tuple[str, str]:
 
 @contextmanager
 def prepare_repo_source(source: str):
-    """Prepare a repository source, either local or cloned from GitHub."""
+    """
+    Prepare a repository source, either local or cloned from GitHub.
+    """
     candidate = Path(source).expanduser()
     if candidate.exists():
         logger.info(f"Using local source: {candidate}")

@@ -157,7 +157,9 @@ class PythonExtractor(Extractor):
         local_functions: set[str],
         class_methods: set[str],
     ) -> None:
-        """Emits INHERITS edges by resolving base class names against the collected context."""
+        """
+        Emits INHERITS edges by resolving base class names against the collected context.
+        """
         class_id = f"{module_id}:{class_node.name}"
         for base in class_node.bases:
             base_name = name_of(base)

@@ -24,20 +24,28 @@ EXPECTED_TOOLS = {
 
 
 class TestMcpTools:
-    """The server exposes the core tool set with the same names."""
+    """
+    The server exposes the core tool set with the same names.
+    """
 
     def test_exposes_expected_tools(self) -> None:
-        """The registered tool list matches the eight core tools."""
+        """
+        The registered tool list matches the eight core tools.
+        """
         app = create_server()
         tools = {t.name for t in asyncio.run(app.list_tools())}
         assert tools == EXPECTED_TOOLS
 
 
 class TestNoPrompts:
-    """The server no longer bundles onboarding or change-analysis prompts."""
+    """
+    The server no longer bundles onboarding or change-analysis prompts.
+    """
 
     def test_no_prompts_registered(self) -> None:
-        """create_server registers zero prompts."""
+        """
+        create_server registers zero prompts.
+        """
         app = create_server()
         prompts = asyncio.run(app.list_prompts())
         assert prompts == []

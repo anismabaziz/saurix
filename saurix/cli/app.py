@@ -24,7 +24,9 @@ DEFAULT_GRAPH_RELATIVE = config.default_graph_path
 
 
 def create_state(graph_path: Path, ui: UI) -> ShellState:
-    """Initializes the persistent state for the interactive session."""
+    """
+    Initializes the persistent state for the interactive session.
+    """
     return ShellState(
         ui=ui,
         graph_path=graph_path,
@@ -105,7 +107,9 @@ def dispatch_command(state: ShellState, raw: str, on_clear: Callable[[], None] |
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Configures the command-line argument parser for the saurix entrypoint."""
+    """
+    Configures the command-line argument parser for the saurix entrypoint.
+    """
     parser = argparse.ArgumentParser(prog="saurix", description="Knowledge graph CLI for AI code exploration.")
     parser.add_argument("--graph", default=str(DEFAULT_GRAPH_RELATIVE), help="Graph JSON path to preload")
     # We use parse_known_args to allow trailing commands
@@ -148,7 +152,9 @@ def run(argv: list[str] | None = None) -> int:
 
 
 def _render_banner(ui: UI) -> None:
-    """Displays the Saurix ASCII logo and initialization message."""
+    """
+    Displays the Saurix ASCII logo and initialization message.
+    """
     ui.print(f"[bold cyan]{ASCII_LOGO}[/]")
     ui.header("Saurix Interactive")
     ui.muted("Type 'help' to list commands.")

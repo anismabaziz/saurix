@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-"""Core interactive commands for querying and navigating the graph."""
+"""
+Core interactive commands for querying and navigating the graph.
+"""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,12 +26,16 @@ class ShellState:
 
 
 def cmd_where(state: ShellState) -> None:
-    """Print active graph file path if loaded."""
+    """
+    Print active graph file path if loaded.
+    """
     state.ui.info(f"Loaded graph: {state.graph_path}") if state.loaded_graph else state.ui.warn("No graph loaded")
 
 
 def cmd_index(state: ShellState, rest: list[str]) -> None:
-    """Index a local path or GitHub URL and persist graph output."""
+    """
+    Index a local path or GitHub URL and persist graph output.
+    """
     if not rest:
         state.ui.warn("Usage: index <repo-or-github-url> [--out PATH]")
         return
@@ -83,7 +89,9 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_load(state: ShellState, rest: list[str]) -> None:
-    """Load an existing graph JSON into shell state."""
+    """
+    Load an existing graph JSON into shell state.
+    """
     candidate = Path(rest[0]).resolve() if rest else state.graph_path
     if not candidate.exists():
         state.ui.error(f"Graph file not found: {candidate}")
@@ -94,7 +102,9 @@ def cmd_load(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_stats(state: ShellState) -> None:
-    """Render stats panel or raw JSON based on shell mode."""
+    """
+    Render stats panel or raw JSON based on shell mode.
+    """
     if not _ensure_graph(state):
         return
     stats = state.loaded_graph.stats()
@@ -102,7 +112,9 @@ def cmd_stats(state: ShellState) -> None:
 
 
 def cmd_find(state: ShellState, rest: list[str]) -> None:
-    """Fuzzy search symbols by name/id substring."""
+    """
+    Fuzzy search symbols by name/id substring.
+    """
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
@@ -115,7 +127,9 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_callers(state: ShellState, rest: list[str]) -> None:
-    """Show CALLS reverse edges into a symbol."""
+    """
+    Show CALLS reverse edges into a symbol.
+    """
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
@@ -128,7 +142,9 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_callees(state: ShellState, rest: list[str]) -> None:
-    """Show CALLS outgoing edges from a symbol."""
+    """
+    Show CALLS outgoing edges from a symbol.
+    """
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
@@ -141,7 +157,9 @@ def cmd_callees(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_related(state: ShellState, rest: list[str]) -> None:
-    """Traverse local neighborhood from a file and list related files."""
+    """
+    Traverse local neighborhood from a file and list related files.
+    """
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
@@ -154,7 +172,9 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_path(state: ShellState, rest: list[str]) -> None:
-    """Find shortest directed path between two symbols."""
+    """
+    Find shortest directed path between two symbols.
+    """
     if not _ensure_graph(state) or len(rest) < 2:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
@@ -167,7 +187,9 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_impact(state: ShellState, rest: list[str]) -> None:
-    """Estimate blast radius via reverse traversal from a symbol."""
+    """
+    Estimate blast radius via reverse traversal from a symbol.
+    """
     if not _ensure_graph(state) or not rest:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
@@ -180,7 +202,9 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
 
 
 def cmd_init(state: ShellState) -> None:
-    """Smooth, zero-config onboarding for the current project."""
+    """
+    Smooth, zero-config onboarding for the current project.
+    """
     ui = state.ui
     ui.header("Initializing Saurix for this project...")
 
@@ -239,7 +263,9 @@ def cmd_init(state: ShellState) -> None:
 
 
 def cmd_visual(state: ShellState, rest: list[str]) -> None:
-    """Generate and open a lightweight HTML graph visualization."""
+    """
+    Generate and open a lightweight HTML graph visualization.
+    """
     if state.loaded_graph is None:
         state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
         return
@@ -262,7 +288,9 @@ def cmd_visual(state: ShellState, rest: list[str]) -> None:
 
 
 def _ensure_graph(state: ShellState) -> bool:
-    """Guard helper to ensure commands run with a loaded graph."""
+    """
+    Guard helper to ensure commands run with a loaded graph.
+    """
     if state.loaded_graph is None:
         state.ui.warn("No graph loaded. Run 'index <repo-or-github-url>' or 'load [PATH]' first.")
         return False

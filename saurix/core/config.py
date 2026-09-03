@@ -7,7 +7,9 @@ from pathlib import Path
 
 @dataclass
 class SaurixConfig:
-    """Central configuration for Saurix."""
+    """
+    Central configuration for Saurix.
+    """
 
     # Default paths
     app_data_dir: Path = field(default_factory=lambda: Path(os.getenv("SAURIX_DATA_DIR", "~/.saurix")).expanduser())
@@ -36,7 +38,9 @@ class SaurixConfig:
 
     @property
     def tmp_dir(self) -> Path:
-        """Get or create the temporary directory for artifacts."""
+        """
+        Get or create the temporary directory for artifacts.
+        """
         tmp = Path("tmp")
         tmp.mkdir(exist_ok=True)
         return tmp.resolve()

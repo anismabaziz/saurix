@@ -13,10 +13,14 @@ from saurix.core.indexing import build_graph
 
 
 class TestStubLanguagesSkipped:
-    """Files without a real Extractor are skipped entirely."""
+    """
+    Files without a real Extractor are skipped entirely.
+    """
 
     def test_unsupported_extensions_produce_no_symbols(self, tmp_path: Path) -> None:
-        """Ruby, Rust, PHP, and C# files are not indexed."""
+        """
+        Ruby, Rust, PHP, and C# files are not indexed.
+        """
         (tmp_path / "app.rb").write_text("class App\nend\n")
         (tmp_path / "lib.rs").write_text("fn main() {}\n")
         (tmp_path / "index.php").write_text("<?php echo 1;\n")
@@ -31,7 +35,9 @@ class TestStubLanguagesSkipped:
         assert {n.language for n in result.graph.nodes.values()} == {"meta"}
 
     def test_stats_hold_no_stub_coverage(self, tmp_path: Path) -> None:
-        """Graph stats expose no coverage rows for unsupported languages."""
+        """
+        Graph stats expose no coverage rows for unsupported languages.
+        """
         (tmp_path / "app.rb").write_text("class App\nend\n")
         (tmp_path / "app.py").write_text("def f():\n    return 1\n")
 
@@ -41,7 +47,9 @@ class TestStubLanguagesSkipped:
         assert set(coverage.keys()) == {"python"}
 
     def test_supported_languages_indexed(self, tmp_path: Path) -> None:
-        """Python, TypeScript/JavaScript, Go, and Java fixtures are indexed."""
+        """
+        Python, TypeScript/JavaScript, Go, and Java fixtures are indexed.
+        """
         (tmp_path / "a.py").write_text("def f():\n    return 1\n")
         (tmp_path / "b.ts").write_text("export function g() { return 1; }\n")
         (tmp_path / "c.go").write_text("package c\nfunc H() {}\n")
@@ -54,10 +62,14 @@ class TestStubLanguagesSkipped:
 
 
 class TestNoCache:
-    """Indexing is a straight scan with no cache file written or replayed."""
+    """
+    Indexing is a straight scan with no cache file written or replayed.
+    """
 
     def test_no_cache_file_created(self, tmp_path: Path) -> None:
-        """No cache artifact appears anywhere under the repo."""
+        """
+        No cache artifact appears anywhere under the repo.
+        """
         (tmp_path / "m.py").write_text("def f():\n    return 1\n")
 
         build_graph(tmp_path)
@@ -66,7 +78,9 @@ class TestNoCache:
         assert caches == []
 
     def test_reindex_produces_identical_graph(self, tmp_path: Path) -> None:
-        """Re-running the index from scratch yields the same graph twice."""
+        """
+        Re-running the index from scratch yields the same graph twice.
+        """
         (tmp_path / "m.py").write_text("def f():\n    return f()\n")
 
         first = build_graph(tmp_path)
@@ -75,7 +89,9 @@ class TestNoCache:
         assert first.graph.to_dict() == second.graph.to_dict()
 
     def test_stats_hold_no_cache_section(self, tmp_path: Path) -> None:
-        """The stats dictionary exposes no cache-specific keys."""
+        """
+        The stats dictionary exposes no cache-specific keys.
+        """
         (tmp_path / "m.py").write_text("def f():\n    return 1\n")
 
         result = build_graph(tmp_path)

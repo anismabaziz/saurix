@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 def _load_template() -> str:
-    """Load the dashboard HTML template from the asset file."""
+    """
+    Load the dashboard HTML template from the asset file.
+    """
     # Primary: package asset at saurix/assets/dashboard.html
     asset_path = Path(__file__).resolve().parent.parent / "assets" / "dashboard.html"
     if asset_path.exists():
@@ -35,7 +37,9 @@ def _load_template() -> str:
 
 
 def generate_visualization(graph: GraphStore, out_path: Path, limit: int = 5000) -> Path:
-    """Constructs a 2D HTML dashboard with search and filtering."""
+    """
+    Constructs a 2D HTML dashboard with search and filtering.
+    """
     nodes = []
     node_ids = set()
 
