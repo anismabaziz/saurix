@@ -18,14 +18,14 @@ flowchart TD
         E[Symbol Extractor] --> A
         F[Python / Tree-sitter] --> E
         G[TypeScript / Tree-sitter] --> E
-        H[Go / Java / C++] --> E
+        H[Go / Java] --> E
     end
 
     subgraph discovery ["Graph Intelligence"]
         I[Fuzzy Search] --> B
         J[Relationship Discovery] --> B
         K[Impact Analysis] --> B
-        L[3D Visualizer] --> B
+        L[2D Visualizer] --> B
     end
 
     subgraph interface ["Delivery Layers"]
@@ -34,6 +34,15 @@ flowchart TD
         O[Web Dashboard] --> discovery
     end
 ```
+
+## Package Layout
+
+- `saurix/core` — central config, models, GraphStore, and indexing orchestration.
+- `saurix/analysis` — language extractors for Python, TypeScript/JavaScript, Go, and Java.
+- `saurix/discovery` — query operations (`find`, `callers`, `callees`, `path`, `impact`, `related`) and the 2D visualization generator.
+- `saurix/cli` — argument parsing, command dispatch, and terminal UI rendering.
+- `saurix/agents/mcp` — the Model Context Protocol server.
+- `saurix/assets` — embedded asset templates (for example, the dashboard HTML).
 
 ---
 
@@ -53,6 +62,8 @@ This layer performs the heavy lifting of understanding code without executing it
 - **Polyglot Extractors**: Language-specific logic identifies how symbols are defined and referenced. 
     - **Python**: Handles imports, function calls, class inheritance, and global variable usage.
     - **TypeScript/JavaScript**: Resolves module exports and complex call chains.
+    - **Go**: Extracts modules, functions, imports, and call relationships.
+    - **Java**: Extracts classes, methods, imports, and call relationships.
 - **Relationship Resolution**: After initial extraction, a "linker" pass resolves string-based references (e.g., a function call) into direct edges between graph nodes.
 
 ## 3. Graph Intelligence (`saurix.discovery`)
@@ -73,7 +84,7 @@ This is the primary interface for AI agents (like Claude, Cursor, or ChatGPT).
 ## 5. User Interfaces
 
 - **CLI**: An interactive shell for developers to query their architecture directly from the terminal.
-- **3D Visualizer**: A hybrid 2D/3D force-directed graph rendered in the browser (`saurix.html`), allowing users to fly through their codebase.
+- **2D Visualizer**: An interactive 2D force-directed graph rendered in the browser (`saurix.html`) with search highlighting and tooltips.
 
 ---
 
@@ -81,4 +92,4 @@ This is the primary interface for AI agents (like Claude, Cursor, or ChatGPT).
 
 - **Zero-Config**: Works out of the box with `saurix init`.
 - **Sub-Second Queries**: All relationship discovery and impact analysis tasks are optimized to return in milliseconds.
-- **Incremental Indexing**: Only re-indexes files that have changed since the last run.
+- **Straight Re-Indexing**: Indexing is a full scan that re-derives the Graph from scratch on each run; no cache file is read or written.

@@ -12,7 +12,6 @@ class SaurixConfig:
     # Default paths
     app_data_dir: Path = field(default_factory=lambda: Path(os.getenv("SAURIX_DATA_DIR", "~/.saurix")).expanduser())
     default_graph_name: str = "saurix.graph.json"
-    default_cache_name: str = "saurix.cache.json"
 
     # Indexing settings
     exclude_dirs: set[str] = field(default_factory=lambda: {
