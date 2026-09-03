@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 
 from ..core.graph import GraphStore
+from ..core.models import Edge, Node
 from .base import Extractor
-from .common import add_calls_edge, add_contains_edge, add_import_edge, add_node
 
 
 class RegexLangExtractor(Extractor):
@@ -27,23 +27,23 @@ class RegexLangExtractor(Extractor):
         source = file_path.read_text(encoding="utf-8", errors="replace")
         module_name = rel.rsplit(".", 1)[0].replace("/", ".")
         module_id = f"{self.language}://{module_name}"
-        add_node(graph, node_id=module_id, node_type="module", language=self.language, name=module_name, file=rel, line=1)
+        graph.add_node(Node(id=module_id, type="module", language=self.language, name=module_name, file=rel, line=1))
 
         for match in self.import_pattern.finditer(source):
             target = _first_group(match, "target", "target2").strip()
             if not target:
                 continue
             target_id = f"{self.language}://{target.replace('/', '.')}"
-            add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-            add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=_line(source, match.start()))
+            graph.add_node(Node(id=target_id, type="module", language=self.language, name=target))
+            graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=_line(source, match.start())))
 
         for match in self.function_pattern.finditer(source):
             name = _first_group(match, "name", "name2").strip()
             if not name:
                 continue
             fn_id = f"{module_id}:{name}"
-            add_node(graph, node_id=fn_id, node_type="function", language=self.language, name=name, file=rel, line=_line(source, match.start()))
-            add_contains_edge(graph, language=self.language, source=module_id, target=fn_id, file=rel, line=_line(source, match.start()))
+            graph.add_node(Node(id=fn_id, type="function", language=self.language, name=name, file=rel, line=_line(source, match.start())))
+            graph.add_edge(Edge(type="CONTAINS", source=module_id, target=fn_id, language=self.language, confidence="high", file=rel, line=_line(source, match.start())))
 
         module_symbols = {n.name: n.id for n in graph.nodes.values() if n.file == rel and n.type in {"function", "method"}}
         caller = next(iter(module_symbols.values()), module_id)
@@ -52,15 +52,17 @@ class RegexLangExtractor(Extractor):
             if not callee:
                 continue
             target_id = module_symbols.get(callee, f"{self.language}://{callee}")
-            add_node(graph, node_id=target_id, node_type="symbol", language=self.language, name=callee)
-            add_calls_edge(
-                graph,
-                language=self.language,
-                source=caller,
-                target=target_id,
-                file=rel,
-                line=_line(source, match.start()),
-                confidence="low" if target_id.startswith(f"{self.language}://") else "medium",
+            graph.add_node(Node(id=target_id, type="symbol", language=self.language, name=callee))
+            graph.add_edge(
+                Edge(
+                    type="CALLS",
+                    source=caller,
+                    target=target_id,
+                    language=self.language,
+                    confidence="low" if target_id.startswith(f"{self.language}://") else "medium",
+                    file=rel,
+                    line=_line(source, match.start()),
+                )
             )
 
 

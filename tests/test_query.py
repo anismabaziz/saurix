@@ -5,8 +5,7 @@ import pytest
 
 from saurix.core.graph import GraphStore
 from saurix.core.models import Edge, Node
-from saurix.discovery.basic import find_symbol, callers_of, related_files
-from saurix.discovery.traversal import impact_of, resolve_symbol_ids, shortest_path
+from saurix.discovery import callees_of, callers_of, find_symbol, impact_of, related_files, resolve_symbol_ids, shortest_path
 
 
 class TestFindSymbol:

@@ -12,11 +12,10 @@ import ast
 from pathlib import Path
 
 from .base import Extractor
-from .common import add_import_edge, add_node
 from .python_builder import add_class, add_function
 from .python_utils import name_of, resolve_name
 from ..core.graph import GraphStore
-from ..core.models import Edge
+from ..core.models import Edge, Node
 
 
 class PythonExtractor(Extractor):
@@ -46,21 +45,22 @@ class PythonExtractor(Extractor):
             tree = ast.parse(source)
         except SyntaxError as exc:
             # On syntax error, record a 'file' node with error metadata but skip symbol extraction
-            add_node(
-                graph,
-                node_id=f"python://{rel}",
-                node_type="file",
-                language=self.language,
-                name=file_path.name,
-                file=rel,
-                metadata={"parse_error": str(exc)},
+            graph.add_node(
+                Node(
+                    id=f"python://{rel}",
+                    type="file",
+                    language=self.language,
+                    name=file_path.name,
+                    file=rel,
+                    metadata={"parse_error": str(exc)},
+                )
             )
             return
 
         # Map file to a Python module identifier
         module_name = rel[:-3].replace("/", ".") if rel.endswith(".py") else rel
         module_id = f"python://{module_name}"
-        add_node(graph, node_id=module_id, node_type="module", language=self.language, name=module_name, file=rel, line=1)
+        graph.add_node(Node(id=module_id, type="module", language=self.language, name=module_name, file=rel, line=1))
 
         # Pass 1: Build local context (imports and available local names)
         imports, local_functions, class_methods = self._collect_context(tree, graph, module_id, rel)
@@ -123,8 +123,8 @@ class PythonExtractor(Extractor):
                     alias_name = alias.asname or alias.name.split(".")[0]
                     imports[alias_name] = target
                     target_id = f"python://{target}"
-                    add_node(graph, node_id=target_id, node_type="module", language=self.language, name=target)
-                    add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=getattr(node, "lineno", None))
+                    graph.add_node(Node(id=target_id, type="module", language=self.language, name=target))
+                    graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=getattr(node, "lineno", None)))
                     
             elif isinstance(node, ast.ImportFrom):
                 # Handles 'from x import y as z'
@@ -135,8 +135,8 @@ class PythonExtractor(Extractor):
                     resolved = f"{module}.{imported_name}" if module else imported_name
                     imports[alias_name] = resolved
                     target_id = f"python://{resolved}"
-                    add_node(graph, node_id=target_id, node_type="symbol", language=self.language, name=resolved)
-                    add_import_edge(graph, language=self.language, source=module_id, target=target_id, file=rel, line=getattr(node, "lineno", None))
+                    graph.add_node(Node(id=target_id, type="symbol", language=self.language, name=resolved))
+                    graph.add_edge(Edge(type="IMPORTS", source=module_id, target=target_id, language=self.language, confidence="high", file=rel, line=getattr(node, "lineno", None)))
                     
             elif isinstance(node, ast.FunctionDef):
                 local_functions.add(node.name)
@@ -172,7 +172,7 @@ class PythonExtractor(Extractor):
                 class_name=class_node.name,
                 class_methods=class_methods,
             )
-            add_node(graph, node_id=resolved, node_type="class", language=self.language, name=base_name)
+            graph.add_node(Node(id=resolved, type="class", language=self.language, name=base_name))
             graph.add_edge(
                 Edge(
                     type="INHERITS",

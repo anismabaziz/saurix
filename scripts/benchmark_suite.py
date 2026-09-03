@@ -18,7 +18,7 @@ from time import perf_counter
 
 from saurix.core.cache import DEFAULT_CACHE_PATH
 from saurix.core.indexing import build_graph
-from saurix.discovery.traversal import impact_of
+from saurix.discovery import impact_of
 
 @dataclass
 class BenchResult:

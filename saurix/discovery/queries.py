@@ -1,39 +1,137 @@
 from __future__ import annotations
 
 """
-Graph Traversal Module
+Discovery queries — single owner for all Graph queries.
 
-This module provides advanced graph query algorithms such as symbol resolution,
-shortest path detection, impact analysis (blast radius), and neighborhood subgraph extraction.
+This module merges the former `basic` and `traversal` splits so that
+`find`, `callers`, `callees`, `related`, `path`, `impact`, and
+`neighborhood` live together and share symbol resolution.
 """
 
 from collections import defaultdict, deque
 from typing import Any
 
 from ..core.graph import GraphStore
-from .basic import find_symbol
+
+
+def find_symbol(graph: GraphStore, needle: str, limit: int = 20) -> list[dict[str, str]]:
+    """Fuzzy search symbols by substring of name or id."""
+    q = needle.lower()
+    rows: list[dict[str, str]] = []
+
+    for node in graph.nodes.values():
+        if q in node.name.lower() or q in node.id.lower():
+            rows.append({"id": node.id, "type": node.type, "name": node.name, "file": node.file or ""})
+
+    rows.sort(key=lambda r: (r["type"], r["id"]))
+    return rows[:limit]
+
+
+def _resolve_exact_ids(graph: GraphStore, symbol: str) -> list[str]:
+    """Shared exact resolution: exact id, then exact name via index. No fuzzy fallback."""
+    if symbol in graph.nodes:
+        return [symbol]
+    exact = [node.id for node in graph.get_nodes_by_name(symbol)]
+    return exact
 
 
 def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[str]:
     """
     Resolves a user-provided symbol name or ID to a list of matching graph node IDs.
-    
-    It performs resolution in the following order of priority:
-    1. Exact ID match (if the input is already a unique node ID).
-    2. Exact name match (using the GraphStore's name index).
-    3. Fuzzy name match (partial substring matching).
-    """
-    if symbol in graph.nodes:
-        return [symbol]
 
-    # Use the indexed name lookup for efficiency
-    exact = [node.id for node in graph.get_nodes_by_name(symbol)]
+    Resolution order:
+    1. Exact ID match.
+    2. Exact name match via indexed lookup.
+    3. Fuzzy substring match.
+    """
+    exact = _resolve_exact_ids(graph, symbol)
     if exact:
         return exact[:limit]
 
-    # Fallback to fuzzy search if no exact match is found
     fuzzy = find_symbol(graph, symbol, limit=limit)
     return [row["id"] for row in fuzzy]
+
+
+def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
+    """Find CALLS edges targeting `symbol`, sharing exact resolution with traversal queries."""
+    # Use exact resolution only to preserve pre-collapse semantics (no fuzzy callers)
+    exact_ids = _resolve_exact_ids(graph, symbol)
+    target_ids = set(exact_ids) if exact_ids else {symbol}
+
+    rows: list[dict[str, str]] = []
+    for edge in graph.edges:
+        if edge.type != "CALLS" or edge.target not in target_ids:
+            continue
+        source = graph.nodes.get(edge.source)
+        rows.append(
+            {
+                "caller": edge.source,
+                "caller_name": source.name if source else edge.source,
+                "line": str(edge.line or ""),
+                "confidence": edge.confidence,
+            }
+        )
+
+    rows.sort(key=lambda r: (r["confidence"], r["caller"]))
+    return rows[:limit]
+
+
+def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str, str]]:
+    """List CALLS edges outgoing from `symbol`, sharing exact resolution."""
+    exact_ids = _resolve_exact_ids(graph, symbol)
+    target_ids = set(exact_ids) if exact_ids else {symbol}
+
+    rows: list[dict[str, str]] = []
+    for edge in graph.edges:
+        if edge.type != "CALLS" or edge.source not in target_ids:
+            continue
+        target = graph.nodes.get(edge.target)
+        rows.append(
+            {
+                "callee": edge.target,
+                "callee_name": target.name if target else edge.target,
+                "line": str(edge.line or ""),
+                "confidence": edge.confidence,
+            }
+        )
+
+    rows.sort(key=lambda r: (r["confidence"], r["callee"]))
+    return rows[:limit]
+
+
+def related_files(graph: GraphStore, file_path: str, depth: int = 2, limit: int = 100) -> list[str]:
+    """Find files related to `file_path` via undirected graph neighborhood."""
+    file_nodes = [n.id for n in graph.nodes.values() if n.file == file_path]
+    if not file_nodes:
+        return []
+
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    for edge in graph.edges:
+        adjacency[edge.source].add(edge.target)
+        adjacency[edge.target].add(edge.source)
+
+    visited = set(file_nodes)
+    frontier = set(file_nodes)
+
+    for _ in range(max(depth, 0)):
+        next_frontier: set[str] = set()
+        for node_id in frontier:
+            for neigh in adjacency.get(node_id, set()):
+                if neigh not in visited:
+                    visited.add(neigh)
+                    next_frontier.add(neigh)
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    files = sorted(
+        {
+            graph.nodes[node_id].file
+            for node_id in visited
+            if node_id in graph.nodes and graph.nodes[node_id].file
+        }
+    )
+    return files[:limit]
 
 
 def shortest_path(
@@ -45,29 +143,16 @@ def shortest_path(
     max_depth: int = 12,
 ) -> list[dict[str, str]]:
     """
-    Finds the shortest directed path between two symbols using Breadth-First Search (BFS).
-    
-    Args:
-        graph: The active GraphStore.
-        source_symbol: The starting symbol (name or ID).
-        target_symbol: The destination symbol (name or ID).
-        edge_types: Optional set of allowed edge types to traverse.
-        max_depth: Maximum search depth to prevent infinite loops or excessive computation.
-        
-    Returns:
-        A list of path steps, where each step contains metadata about the node and the edge 
-        that led to it. Returns an empty list if no path is found.
+    Finds the shortest directed path between two symbols using BFS.
     """
     allowed = edge_types or {"CALLS", "IMPORTS", "CONTAINS", "INHERITS"}
     source_ids = resolve_symbol_ids(graph, source_symbol)
     target_ids = set(resolve_symbol_ids(graph, target_symbol))
-    
+
     if not source_ids or not target_ids:
         return []
 
-    # Standard BFS for shortest path in an unweighted graph
     queue: deque[tuple[str, int]] = deque()
-    # Stores (predecessor_id, edge_type) for path reconstruction
     prev: dict[str, tuple[str | None, str | None]] = {}
 
     for sid in source_ids:
@@ -77,16 +162,14 @@ def shortest_path(
     hit: str | None = None
     while queue:
         node_id, depth = queue.popleft()
-        
-        # Check if we reached any of the target IDs
+
         if node_id in target_ids:
             hit = node_id
             break
-            
+
         if depth >= max_depth:
             continue
 
-        # Traverse outgoing edges using the GraphStore index
         for edge in graph.get_edges_from(node_id):
             if edge.type not in allowed:
                 continue
@@ -99,7 +182,6 @@ def shortest_path(
     if hit is None:
         return []
 
-    # Reconstruct the path from target back to source
     chain: list[str] = []
     cursor = hit
     while cursor is not None:
@@ -107,7 +189,6 @@ def shortest_path(
         cursor = prev[cursor][0]
     chain.reverse()
 
-    # Format the path for tabular output or JSON response
     result: list[dict[str, str]] = []
     for idx, node_id in enumerate(chain):
         node = graph.nodes.get(node_id)
@@ -135,11 +216,7 @@ def impact_of(
     edge_types: set[str] | None = None,
 ) -> list[dict[str, str]]:
     """
-    Calculates the 'blast radius' of a symbol by traversing incoming edges.
-    
-    This helps identify which parts of the codebase might be affected if a 
-    specific function or class is modified. It effectively performs a BFS 
-    on the reverse graph.
+    Calculates the blast radius of a symbol by traversing incoming edges.
     """
     allowed = edge_types or {"CALLS", "IMPORTS", "CONTAINS"}
     seeds = resolve_symbol_ids(graph, symbol)
@@ -154,8 +231,7 @@ def impact_of(
         node_id, d = queue.popleft()
         if d >= depth:
             continue
-        
-        # Look for nodes that depend on the current node (incoming edges)
+
         for edge in graph.get_edges_to(node_id):
             if edge.type not in allowed:
                 continue
@@ -164,7 +240,7 @@ def impact_of(
                 continue
             visited.add(parent)
             queue.append((parent, d + 1))
-            
+
             node = graph.nodes.get(parent)
             rows.append(
                 {
@@ -179,7 +255,6 @@ def impact_of(
             if len(rows) >= limit:
                 break
 
-    # Sort results by distance for better readability
     rows.sort(key=lambda r: (int(r["distance"]), r["type"], r["id"]))
     return rows[:limit]
 
@@ -193,10 +268,6 @@ def neighborhood_subgraph(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Extracts a local cluster of nodes and edges surrounding a symbol.
-    
-    This is used to build focused visualizations or exports for a specific 
-    area of interest in the codebase. It traverses both incoming and outgoing 
-    edges (undirected) to capture the full context.
     """
     seeds = resolve_symbol_ids(graph, symbol)
     if not seeds:
@@ -207,13 +278,12 @@ def neighborhood_subgraph(
     for _ in range(max(depth, 0)):
         next_frontier: set[str] = set()
         for node_id in frontier:
-            # Aggregate all immediate neighbors (incoming and outgoing)
             neighbors = set()
             for e in graph.get_edges_from(node_id):
                 neighbors.add(e.target)
             for e in graph.get_edges_to(node_id):
                 neighbors.add(e.source)
-            
+
             for neighbor in neighbors:
                 if len(visited) >= limit:
                     break
@@ -225,7 +295,6 @@ def neighborhood_subgraph(
         if not frontier or len(visited) >= limit:
             break
 
-    # Package the discovered nodes with metadata
     nodes: list[dict[str, Any]] = []
     for node_id in sorted(visited):
         node = graph.nodes.get(node_id)
@@ -241,7 +310,6 @@ def neighborhood_subgraph(
             }
         )
 
-    # Collect all edges that exist between the discovered nodes
     edges: list[dict[str, Any]] = []
     seen_edges = set()
     for node_id in visited:
