@@ -1,6 +1,6 @@
 [project]
 name = "saurix"
-version = "0.1.1"
+version = "0.2.0"
 description = "Interactive CLI that indexes polyglot repositories into a queryable knowledge graph for AI agents"
 readme = "README.md"
 authors = [
