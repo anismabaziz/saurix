@@ -45,7 +45,7 @@ class UI:
 
     def prompt(self, graph_name: str) -> str:
         parts = [
-            self.c("atlas", "bold cyan"),
+            self.c("saurix", "bold cyan"),
             self.c(f"[{graph_name}]", "dim"),
             self.c(" > ", "bold"),
         ]

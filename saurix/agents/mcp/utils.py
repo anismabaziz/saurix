@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ...infra.config import config
+from ...core.config import config
 
 
 DEFAULT_GRAPH = config.default_graph_path
