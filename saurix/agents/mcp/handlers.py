@@ -18,8 +18,7 @@ from time import perf_counter
 from ...core.graph import GraphStore
 from ...core.indexing import build_graph
 from ...core.source import prepare_repo_source
-from ...discovery.basic import callees_of, callers_of, find_symbol, related_files
-from ...discovery.traversal import impact_of, shortest_path
+from ...discovery import callees_of, callers_of, find_symbol, impact_of, related_files, shortest_path
 from ...infra.config import config
 from .schemas import ToolError, ToolResult
 from .utils import clamp_depth, clamp_limit, normalize_graph_path

@@ -10,8 +10,7 @@ from .ui import UI, print_json, render_index_summary, render_stats_panel, render
 from ..core.graph import GraphStore
 from ..core.indexing import build_graph
 from ..core.source import prepare_repo_source
-from ..discovery.basic import callees_of, callers_of, find_symbol, related_files
-from ..discovery.traversal import impact_of, shortest_path
+from ..discovery import callees_of, callers_of, find_symbol, impact_of, related_files, shortest_path
 from ..discovery.visual import generate_visualization
 from ..exporters import export_graphml, export_neo4j_csv
 from ..infra.config import config

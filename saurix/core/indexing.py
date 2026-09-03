@@ -16,7 +16,6 @@ from typing import Any
 from .cache import DEFAULT_CACHE_PATH, deserialize_contribution, file_hash, load_cache, save_cache, serialize_contribution
 from .graph import GraphStore
 from .models import Node
-from ..analysis import GoExtractor, JavaExtractor, PythonExtractor, StubExtractor, TypeScriptExtractor
 from ..infra.config import config
 from ..infra.logging import get_logger
 
@@ -81,6 +80,12 @@ class RepositoryIndexer:
         self.exclude_dirs = exclude_dirs or config.exclude_dirs
         self.on_progress = on_progress
         self.graph = GraphStore()
+        # Lazy import to avoid circular init between core and analysis
+        from ..analysis.go_extractor import GoExtractor
+        from ..analysis.java_extractor import JavaExtractor
+        from ..analysis.python_extractor import PythonExtractor
+        from ..analysis.typescript_extractor import TypeScriptExtractor
+
         # Pre-initialize heavy-weight extractors
         self.extractors = {
             "python": PythonExtractor(),
@@ -211,6 +216,8 @@ class RepositoryIndexer:
                     logger.error(f"Failed to extract {rel}: {e}")
             else:
                 # Use a lightweight fallback for languages without dedicated extractors
+                from ..analysis.stub_extractor import StubExtractor
+
                 StubExtractor(lang).extract(repo_root=self.root, file_path=file_path, graph=self.graph)
                 nodes = [n for n in self.graph.nodes.values() if n.file == rel]
                 edges = [e for e in self.graph.edges if e.file == rel]
