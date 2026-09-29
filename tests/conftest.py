@@ -12,6 +12,11 @@ import pytest
 from saurix.core.graph import GraphStore
 from saurix.core.models import Edge, Node
 
+# `tests/fixtures` holds repositories the harness measures. Their own test files
+# are fixtures, not tests of this project, and collecting them would run a
+# stranger's suite inside our suite.
+collect_ignore_glob = ["fixtures/*"]
+
 
 @pytest.fixture
 def empty_graph() -> GraphStore:
