@@ -93,6 +93,22 @@ Configure your agent with the `saurix-mcp` entry point. Once configured, the AI 
 uv run pytest
 ```
 
+### Regenerating the Documentation
+
+The tool-call demo ([demo-mcp.md](demo-mcp.md)) and the agent walkthrough
+([docs/agent-lifecycle.md](docs/agent-lifecycle.md)) are generated from a real
+run of the MCP server against this repository, so every identifier in them is
+one a reader can copy. Refresh them after touching the code or the tool surface:
+
+```bash
+uv run scripts/generate_mcp_demo.py
+```
+
+`--check` reports drift without writing. `tests/test_docs.py` re-runs the
+generator on every test run and fails when the committed documents no longer
+match the current code, or when any document names a module or file path that
+no longer exists.
+
 ### Testing the MCP Server
 
 You can test the MCP integration without a full IDE using the **MCP Inspector**:
