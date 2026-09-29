@@ -25,7 +25,7 @@ import pytest
 from saurix.agents.mcp import handlers
 from saurix.agents.mcp.server import create_server
 from saurix.core.config import config
-from saurix.core.graph import GraphStore
+from saurix.core.graph import SCHEMA_VERSION, GraphStore
 
 
 @dataclass(frozen=True)
@@ -259,7 +259,7 @@ class TestIndexRepo:
         assert data["graph_path"] == str(out)
         assert data["source_kind"] == "local"
         assert data["indexed_files"] >= 1
-        assert data["stats"]["nodes"] >= 1
+        assert data["stats"]["symbols"] >= 1
         assert out.exists()
 
     def test_reports_a_source_that_does_not_exist(self, tmp_path: Path) -> None:
@@ -311,15 +311,30 @@ class TestGraphThatIsNotAGraph:
         self, tmp_path: Path, temp_graph_file: Path
     ) -> None:
         """
-        A JSON file whose nodes carry unknown fields is reported, not raised.
+        A JSON file whose symbols carry unknown fields is reported, not raised.
         """
         path = tmp_path / "wrong-shape.graph.json"
-        path.write_text(json.dumps({"schema_version": "1.0.0", "nodes": [{"x": 1}]}))
+        path.write_text(
+            json.dumps({"schema_version": SCHEMA_VERSION, "symbols": [{"x": 1}]})
+        )
         response = call_tool("find_symbol", {"graph": str(path), "query": "func"})
         assert_envelope(response)
         assert response["ok"] is False
         assert response["error"]["code"] == "INVALID_GRAPH"
         assert str(path) in response["error"]["message"]
+
+    def test_reports_a_graph_written_by_an_older_release(self, tmp_path: Path) -> None:
+        """
+        A graph from before the rename is reported with the re-index it needs,
+        rather than read as an empty Graph.
+        """
+        path = tmp_path / "old.graph.json"
+        path.write_text(json.dumps({"schema_version": "1.0.0", "nodes": []}))
+        response = call_tool("stats", {"graph": str(path)})
+        assert_envelope(response)
+        assert response["ok"] is False
+        assert response["error"]["code"] == "INVALID_GRAPH"
+        assert "Re-index" in response["error"]["message"]
 
 
 class TestStats:
@@ -335,15 +350,15 @@ class TestStats:
         assert_envelope(response)
         assert response["ok"] is True
         assert {
-            "nodes",
+            "symbols",
             "edges",
-            "node_types",
+            "symbol_types",
             "edge_types",
             "languages",
             "confidence_counts",
             "confidence_percentages",
         } <= set(response["data"])
-        assert response["data"]["nodes"] == 6
+        assert response["data"]["symbols"] == 6
         assert response["data"]["edges"] == 7
 
     def test_reports_a_stats_failure(

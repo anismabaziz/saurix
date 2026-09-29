@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..core.graph import GraphStore
-from ..core.models import Edge, Node
+from ..core.models import Edge, Symbol
 from .base import Extractor
 from .tree_sitter_support import find_first_desc, get_parser, text_of, walk
 
@@ -28,8 +28,8 @@ class JavaExtractor(Extractor):
 
         module_name = rel.rsplit(".", 1)[0].replace("/", ".")
         module_id = f"java://{module_name}"
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=module_id,
                 type="module",
                 language=self.language,
@@ -55,8 +55,8 @@ class JavaExtractor(Extractor):
             if not name:
                 continue
             target = local_symbols.get(name, f"java://{name}")
-            graph.add_node(
-                Node(id=target, type="symbol", language=self.language, name=name)
+            graph.add_symbol(
+                Symbol(id=target, type="symbol", language=self.language, name=name)
             )
             graph.add_edge(
                 Edge(
@@ -85,8 +85,8 @@ class JavaExtractor(Extractor):
         if not target:
             return
         target_id = f"java://{target}"
-        graph.add_node(
-            Node(id=target_id, type="module", language=self.language, name=target)
+        graph.add_symbol(
+            Symbol(id=target_id, type="module", language=self.language, name=target)
         )
         graph.add_edge(
             Edge(
@@ -123,8 +123,8 @@ class JavaExtractor(Extractor):
         fn_id = f"{module_id}:{name}"
         local_symbols[name] = fn_id
         line = node.start_point[0] + 1
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=fn_id,
                 type="method",
                 language=self.language,

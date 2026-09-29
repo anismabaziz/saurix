@@ -92,7 +92,7 @@ class UnresolvedEdge:
         return f"{self.caller} -> {self.target}"
 
 
-def symbol_key(node_id: str) -> Symbol | None:
+def symbol_key(symbol_id: str) -> Symbol | None:
     """
     Reduce a Python symbol id to the symbol a trace records.
 
@@ -100,9 +100,9 @@ def symbol_key(node_id: str) -> Symbol | None:
     symbol. `python://helper` names something the Indexing pipeline could not
     resolve, so it matches nothing and is reported as unresolved instead.
     """
-    if not node_id.startswith(SCHEME):
+    if not symbol_id.startswith(SCHEME):
         return None
-    body = node_id[len(SCHEME) :]
+    body = symbol_id[len(SCHEME) :]
     if ":" in body:
         module, _, qualname = body.partition(":")
     else:
@@ -185,18 +185,18 @@ class Comparison:
 
 def _defined_symbols(graph: GraphStore) -> set[Symbol]:
     """
-    Every symbol the graph holds a definition for, that is, every node that
+    Every symbol the graph holds a definition for, that is, every Symbol that
     came out of a file.
 
-    An edge to `python://pkg.mod.helper` and the definition node
+    An edge to `python://pkg.mod.helper` and the definition symbol
     `python://pkg.mod:helper` are the same symbol under two id conventions, so
     a definition is looked up by reduced key rather than by id.
     """
     keys: set[Symbol] = set()
-    for node in graph.nodes.values():
-        if node.file is None:
+    for symbol in graph.symbols.values():
+        if symbol.file is None:
             continue
-        key = symbol_key(node.id)
+        key = symbol_key(symbol.id)
         if key is not None:
             keys.add(key)
     return keys

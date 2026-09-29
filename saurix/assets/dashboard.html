@@ -73,7 +73,7 @@
             <div class="legend-item"><div class="dot" style="background:#238636"></div> Function</div>
             <div class="legend-item"><div class="dot" style="background:#a371f7"></div> Method</div>
             <div style="margin-top:10px; color:#8b949e; font-size: 11px;">
-                <b>Tip:</b> Searching will highlight matches and dim others. Click a node to focus.
+                <b>Tip:</b> Searching will highlight matches and dim others. Click a symbol to focus.
             </div>
         </div>
     </div>
@@ -84,25 +84,25 @@
         let graphInstance = null;
         let searchText = '';
 
-        const getColor = node => {
-            const isMatch = !searchText || 
-                           node.name.toLowerCase().includes(searchText.toLowerCase()) || 
-                           node.id.toLowerCase().includes(searchText.toLowerCase());
+        const getColor = symbol => {
+            const isMatch = !searchText ||
+                           symbol.name.toLowerCase().includes(searchText.toLowerCase()) || 
+                           symbol.id.toLowerCase().includes(searchText.toLowerCase());
             
             if (!isMatch) return 'rgba(48, 54, 61, 0.1)';
 
-            if (node.type === 'module') return '#58a6ff';
-            if (node.type === 'class') return '#d29922';
-            if (node.type === 'function') return '#238636';
-            if (node.type === 'method') return '#a371f7';
+            if (symbol.type === 'module') return '#58a6ff';
+            if (symbol.type === 'class') return '#d29922';
+            if (symbol.type === 'function') return '#238636';
+            if (symbol.type === 'method') return '#a371f7';
             return '#8b949e';
         };
 
-        const getTooltip = node => `
+        const getTooltip = symbol => `
             <div style="text-align: left;">
-                <strong style="color: #58a6ff; font-size: 14px;">${node.name}</strong><br/>
-                <span style="color: #8b949e; font-size: 12px;">Type:</span> ${node.type}<br/>
-                <span style="color: #8b949e; font-size: 12px;">File:</span> ${node.file || 'N/A'}
+                <strong style="color: #58a6ff; font-size: 14px;">${symbol.name}</strong><br/>
+                <span style="color: #8b949e; font-size: 12px;">Type:</span> ${symbol.type}<br/>
+                <span style="color: #8b949e; font-size: 12px;">File:</span> ${symbol.file || 'N/A'}
             </div>
         `;
 
@@ -113,6 +113,8 @@
             }
         }
 
+        // The `node*` and `onNodeClick` names below are force-graph's own API. This
+        // project calls what it renders Symbols; the library calls them nodes.
         function initGraph() {
             if (graphInstance) graphInstance._destructor && graphInstance._destructor();
             document.getElementById('graph-container').innerHTML = '';
@@ -129,8 +131,8 @@
                     return (srcMatch || tgtMatch) ? 1.5 : 0.5;
                 })
                 .linkColor(() => '#30363d')
-                .onNodeClick(node => {
-                    graphInstance.centerAt(node.x, node.y, 1000);
+                .onNodeClick(symbol => {
+                    graphInstance.centerAt(symbol.x, symbol.y, 1000);
                     graphInstance.zoom(4, 1000);
                 });
         }

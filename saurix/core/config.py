@@ -41,7 +41,7 @@ class SaurixConfig:
     )
 
     # Resource limits
-    max_visual_nodes: int = 800
+    max_visual_symbols: int = 800
     default_visual_limit: int = 5000
     default_find_limit: int = 20
     default_callers_limit: int = 50

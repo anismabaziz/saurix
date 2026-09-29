@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from saurix.core.graph import GraphStore
-from saurix.core.models import Edge, Node
+from saurix.core.graph import SCHEMA_VERSION, GraphStore
+from saurix.core.models import Edge, Symbol
 
 
 class TestGraphStoreBasics:
@@ -17,11 +17,11 @@ class TestGraphStoreBasics:
     Test basic GraphStore operations.
     """
 
-    def test_add_node(self, empty_graph: GraphStore) -> None:
+    def test_add_symbol(self, empty_graph: GraphStore) -> None:
         """
-        Test adding a node to the graph.
+        Test adding a symbol to the graph.
         """
-        node = Node(
+        symbol = Symbol(
             id="python://test",
             type="module",
             language="python",
@@ -29,16 +29,16 @@ class TestGraphStoreBasics:
             file="test.py",
             line=1,
         )
-        empty_graph.add_node(node)
+        empty_graph.add_symbol(symbol)
 
-        assert "python://test" in empty_graph.nodes
-        assert empty_graph.nodes["python://test"].name == "test"
+        assert "python://test" in empty_graph.symbols
+        assert empty_graph.symbols["python://test"].name == "test"
 
-    def test_add_duplicate_node(self, empty_graph: GraphStore) -> None:
+    def test_add_duplicate_symbol(self, empty_graph: GraphStore) -> None:
         """
-        Test that duplicate nodes are not added.
+        Test that duplicate symbols are not added.
         """
-        node1 = Node(
+        symbol1 = Symbol(
             id="python://test",
             type="module",
             language="python",
@@ -46,7 +46,7 @@ class TestGraphStoreBasics:
             file="test.py",
             line=1,
         )
-        node2 = Node(
+        symbol2 = Symbol(
             id="python://test",
             type="function",
             language="python",
@@ -55,12 +55,12 @@ class TestGraphStoreBasics:
             line=1,
         )
 
-        empty_graph.add_node(node1)
-        empty_graph.add_node(node2)
+        empty_graph.add_symbol(symbol1)
+        empty_graph.add_symbol(symbol2)
 
-        assert len(empty_graph.nodes) == 1
-        # First node should be kept
-        assert empty_graph.nodes["python://test"].type == "module"
+        assert len(empty_graph.symbols) == 1
+        # First symbol should be kept
+        assert empty_graph.symbols["python://test"].type == "module"
 
     def test_add_edge(self, empty_graph: GraphStore) -> None:
         """
@@ -88,8 +88,8 @@ class TestGraphStoreBasics:
         snapshot = empty_graph.snapshot_counts()
         assert snapshot == (0, 0)
 
-        # Add nodes and edges
-        node1 = Node(
+        # Add symbols and edges
+        symbol1 = Symbol(
             id="python://a",
             type="module",
             language="python",
@@ -97,7 +97,7 @@ class TestGraphStoreBasics:
             file="a.py",
             line=1,
         )
-        node2 = Node(
+        symbol2 = Symbol(
             id="python://b",
             type="function",
             language="python",
@@ -105,8 +105,8 @@ class TestGraphStoreBasics:
             file="a.py",
             line=5,
         )
-        empty_graph.add_node(node1)
-        empty_graph.add_node(node2)
+        empty_graph.add_symbol(symbol1)
+        empty_graph.add_symbol(symbol2)
         empty_graph.add_edge(
             Edge(
                 type="CONTAINS",
@@ -120,8 +120,8 @@ class TestGraphStoreBasics:
         )
 
         # Get contribution since snapshot
-        nodes, edges = empty_graph.contribution_since(snapshot)
-        assert len(nodes) == 2
+        symbols, edges = empty_graph.contribution_since(snapshot)
+        assert len(symbols) == 2
         assert len(edges) == 1
 
 
@@ -136,9 +136,9 @@ class TestGraphStoreStats:
         """
         stats = empty_graph.stats()
 
-        assert stats["nodes"] == 0
+        assert stats["symbols"] == 0
         assert stats["edges"] == 0
-        assert stats["node_types"] == {}
+        assert stats["symbol_types"] == {}
         assert stats["edge_types"] == {}
         assert stats["confidence_percentages"] == {}
 
@@ -148,14 +148,14 @@ class TestGraphStoreStats:
         """
         stats = sample_graph.stats()
 
-        assert stats["nodes"] == 6
+        assert stats["symbols"] == 6
         assert stats["edges"] == 7
 
-        # Check node types
-        assert stats["node_types"]["module"] == 2
-        assert stats["node_types"]["function"] == 2
-        assert stats["node_types"]["class"] == 1
-        assert stats["node_types"]["method"] == 1
+        # Check symbol types
+        assert stats["symbol_types"]["module"] == 2
+        assert stats["symbol_types"]["function"] == 2
+        assert stats["symbol_types"]["class"] == 1
+        assert stats["symbol_types"]["method"] == 1
 
         # Check edge types
         assert stats["edge_types"]["CONTAINS"] == 4
@@ -179,8 +179,8 @@ class TestGraphStoreSerialization:
         """
         data = sample_graph.to_dict()
 
-        assert data["schema_version"] == "1.0.0"
-        assert len(data["nodes"]) == 6
+        assert data["schema_version"] == SCHEMA_VERSION
+        assert len(data["symbols"]) == 6
         assert len(data["edges"]) == 7
         assert "metadata" in data
 
@@ -199,9 +199,9 @@ class TestGraphStoreSerialization:
         # Read
         loaded = GraphStore.from_json(graph_path)
 
-        assert len(loaded.nodes) == 6
+        assert len(loaded.symbols) == 6
         assert len(loaded.edges) == 7
-        assert "python://module1" in loaded.nodes
+        assert "python://module1" in loaded.symbols
 
     def test_from_json_invalid_file(self, tmp_path: Path) -> None:
         """
@@ -232,15 +232,17 @@ class TestGraphStoreEdgeCases:
     Test edge cases and error handling.
     """
 
-    def test_node_without_optional_fields(self, empty_graph: GraphStore) -> None:
+    def test_symbol_without_optional_fields(self, empty_graph: GraphStore) -> None:
         """
-        Test nodes with minimal fields.
+        Test symbols with minimal fields.
         """
-        node = Node(id="minimal://test", type="symbol", language="unknown", name="test")
-        empty_graph.add_node(node)
+        symbol = Symbol(
+            id="minimal://test", type="symbol", language="unknown", name="test"
+        )
+        empty_graph.add_symbol(symbol)
 
-        assert empty_graph.nodes["minimal://test"].file is None
-        assert empty_graph.nodes["minimal://test"].line is None
+        assert empty_graph.symbols["minimal://test"].file is None
+        assert empty_graph.symbols["minimal://test"].line is None
 
     def test_edge_with_none_confidence(self, empty_graph: GraphStore) -> None:
         """

@@ -252,7 +252,7 @@ def run_scenario(source: str, graph_arg: str) -> Transcript:
         "Read the graph stats",
         "stats",
         graph_args,
-        "Node, edge, language and confidence totals, plus how much of the "
+        "Symbol, edge, language and confidence totals, plus how much of the "
         "repository the extractors actually covered.",
     )["data"]
 
@@ -459,12 +459,15 @@ def _count(quantity: int, word: str) -> str:
     return f"{quantity} {stem}"
 
 
-def _node_breakdown(node_types: dict[str, Any]) -> str:
+def _symbol_breakdown(symbol_types: dict[str, Any]) -> str:
     """
-    Render the node type histogram as prose, largest type first.
+    Render the symbol type histogram as prose, largest type first.
+
+    Type names are quoted and left singular: one of them is `symbol`, so a
+    pluralised count of it reads as a second total rather than a share of one.
     """
-    ordered = sorted(node_types.items(), key=lambda item: (-item[1], item[0]))
-    return ", ".join(_count(count, name) for name, count in ordered)
+    ordered = sorted(symbol_types.items(), key=lambda item: (-item[1], item[0]))
+    return ", ".join(f"{count} `{name}`" for name, count in ordered)
 
 
 def _hop_summary(path: list[dict[str, Any]]) -> str:
@@ -527,8 +530,8 @@ def render_lifecycle(transcript: Transcript, source: str) -> str:
             "## Phase 1: Index and get the lay of the land",
             "",
             f"The agent indexes the checkout, then asks for `stats`. The graph "
-            f"holds {_count(stats['nodes'], 'node')}, made up of "
-            f"{_node_breakdown(stats['node_types'])}, joined by "
+            f"holds {_count(stats['symbols'], 'symbol')}: "
+            f"{_symbol_breakdown(stats['symbol_types'])}, joined by "
             f"{_count(stats['edges'], 'edge')}. {coverage} None of that cost "
             f"it a file read.",
             "",
@@ -598,7 +601,7 @@ def render_lifecycle(transcript: Transcript, source: str) -> str:
             "| Question | Without Saurix | With Saurix |",
             "| :--- | :--- | :--- |",
             "| What is in here? | Read files until the shape appears | "
-            f"`stats`, {_count(stats['nodes'], 'node')} in one call |",
+            f"`stats`, {_count(stats['symbols'], 'symbol')} in one call |",
             "| Where is it defined? | Grep, then read the hits | `find_symbol`, "
             f"definition at `{definition['file']}` |",
             "| What touches it? | Trace imports by hand | `callers`, "

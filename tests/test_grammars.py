@@ -164,9 +164,9 @@ class TestIndexingEveryLanguage:
         """
         result = build_graph(polyglot_repo)
 
-        nodes = set(result.graph.nodes)
-        assert "typescript://b:f" in nodes
-        assert "go://c:g" in nodes
+        symbols = set(result.graph.symbols)
+        assert "typescript://b:f" in symbols
+        assert "go://c:g" in symbols
 
         imports = {
             (e.source, e.target) for e in result.graph.edges if e.type == "IMPORTS"

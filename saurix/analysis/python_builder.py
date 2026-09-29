@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 
 from ..core.graph import GraphStore
-from ..core.models import Edge, Node
+from ..core.models import Edge, Symbol
 from .python_utils import call_confidence, name_of, resolve_name
 
 
@@ -19,8 +19,8 @@ def add_class(
     class_methods: set[str],
 ) -> None:
     class_id = f"{module_id}:{class_node.name}"
-    graph.add_node(
-        Node(
+    graph.add_symbol(
+        Symbol(
             id=class_id,
             type="class",
             language=language,
@@ -78,8 +78,8 @@ def add_function(
         fn_type = "function"
         parent_id = module_id
 
-    graph.add_node(
-        Node(
+    graph.add_symbol(
+        Symbol(
             id=fn_id,
             type=fn_type,
             language=language,
@@ -118,8 +118,8 @@ def add_function(
             class_name=class_name,
             class_methods=class_methods,
         )
-        graph.add_node(
-            Node(id=resolved, type="symbol", language=language, name=raw_name)
+        graph.add_symbol(
+            Symbol(id=resolved, type="symbol", language=language, name=raw_name)
         )
         graph.add_edge(
             Edge(

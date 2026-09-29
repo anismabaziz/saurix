@@ -5,7 +5,11 @@ from typing import Any
 
 
 @dataclass(frozen=True)
-class Node:
+class Symbol:
+    """
+    A named code entity the Graph holds: a module, a class, a function, a method.
+    """
+
     id: str
     type: str
     language: str
@@ -18,6 +22,10 @@ class Node:
 
 @dataclass(frozen=True)
 class Edge:
+    """
+    A typed directed relationship between two Symbols.
+    """
+
     type: str
     source: str
     target: str

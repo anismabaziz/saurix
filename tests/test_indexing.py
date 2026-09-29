@@ -32,9 +32,9 @@ class TestStubLanguagesSkipped:
 
         assert result.scanned_files == 0
         assert result.indexed_files == 0
-        # Only the repo root meta node remains
-        assert set(result.graph.nodes) == {f"repo://{tmp_path.name}"}
-        assert {n.language for n in result.graph.nodes.values()} == {"meta"}
+        # Only the repo root meta Symbol remains
+        assert set(result.graph.symbols) == {f"repo://{tmp_path.name}"}
+        assert {n.language for n in result.graph.symbols.values()} == {"meta"}
 
     def test_stats_hold_no_stub_coverage(self, tmp_path: Path) -> None:
         """
@@ -59,7 +59,7 @@ class TestStubLanguagesSkipped:
 
         result = build_graph(tmp_path)
 
-        langs = {n.language for n in result.graph.nodes.values()}
+        langs = {n.language for n in result.graph.symbols.values()}
         assert {"python", "typescript", "go", "java"} <= langs
 
 

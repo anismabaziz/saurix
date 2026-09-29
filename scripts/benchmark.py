@@ -37,7 +37,7 @@ class BenchResult:
     reindex_time: float
     graph_size_kb: float
     query_latency_ms: float
-    nodes: int
+    symbols: int
     edges: int
 
 
@@ -122,9 +122,9 @@ def measure_repo(
 
     # 3. Impact query latency on a found symbol.
     found = [
-        n.id
-        for n in full.graph.nodes.values()
-        if test_symbol in n.id or test_symbol in n.name
+        symbol.id
+        for symbol in full.graph.symbols.values()
+        if test_symbol in symbol.id or test_symbol in symbol.name
     ]
     query_latency = 0.0
     if found:
@@ -140,7 +140,7 @@ def measure_repo(
         reindex_time=reindex_time,
         graph_size_kb=graph_size,
         query_latency_ms=query_latency,
-        nodes=stats.get("nodes", 0),
+        symbols=stats.get("symbols", 0),
         edges=stats.get("edges", 0),
     )
 
@@ -154,7 +154,7 @@ def generate_markdown(results: list[BenchResult]) -> str:
         "Re-index is a straight redo: there is no incremental cache to replay.",
         "",
         "| Repository | Language | Files | Full Index | Re-index | Speedup | "
-        "Graph Size | Nodes | Edges | Density | Impact Query |",
+        "Graph Size | Symbols | Edges | Density | Impact Query |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | "
         ":--- | :--- | :--- |",
     ]
@@ -162,11 +162,11 @@ def generate_markdown(results: list[BenchResult]) -> str:
         speedup = (
             round(r.full_index_time / r.reindex_time, 1) if r.reindex_time > 0 else 0.0
         )
-        density = round(r.edges / r.nodes, 2) if r.nodes > 0 else 0.0
+        density = round(r.edges / r.symbols, 2) if r.symbols > 0 else 0.0
         lines.append(
             f"| `{r.repo_name}` | {r.language} | {r.total_files} | "
             f"{r.full_index_time:.2f}s | {r.reindex_time:.2f}s | {speedup}x | "
-            f"{r.graph_size_kb:.1f} KB | {r.nodes} | {r.edges} | {density} | "
+            f"{r.graph_size_kb:.1f} KB | {r.symbols} | {r.edges} | {density} | "
             f"{r.query_latency_ms:.1f} ms |"
         )
     lines.extend(["", "---", "*Benchmarks performed on: macOS / Apple Silicon.*"])

@@ -91,7 +91,7 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         "output": str(state.graph_path),
         "scanned_files": result.scanned_files,
         "indexed_files": result.indexed_files,
-        "nodes": stats.get("nodes", 0) if isinstance(stats, dict) else 0,
+        "symbols": stats.get("symbols", 0) if isinstance(stats, dict) else 0,
         "edges": stats.get("edges", 0) if isinstance(stats, dict) else 0,
     }
     if excludes:
@@ -107,9 +107,26 @@ def cmd_load(state: ShellState, rest: list[str]) -> None:
     if not candidate.exists():
         state.ui.error(f"Graph file not found: {candidate}")
         return
-    state.loaded_graph = GraphStore.from_json(candidate)
+    loaded = read_graph(candidate, state.ui)
+    if loaded is None:
+        return
+    state.loaded_graph = loaded
     state.graph_path = candidate
     state.ui.success(f"Loaded graph: {state.graph_path}")
+
+
+def read_graph(path: Path, ui: UI) -> GraphStore | None:
+    """
+    Read a graph file, reporting what is wrong with it instead of raising.
+
+    A graph written by an older Saurix is a normal thing to find on disk, not a
+    reason to hand the user a traceback.
+    """
+    try:
+        return GraphStore.from_json(path)
+    except (OSError, ValueError, TypeError) as exc:
+        ui.error(f"Could not read {path}: {exc}")
+        return None
 
 
 def cmd_stats(state: ShellState) -> None:

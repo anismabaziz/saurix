@@ -37,9 +37,9 @@ class MyClass:
             repo_root=tmp_path, file_path=tmp_path / "test_module.py", graph=graph
         )
 
-        # Check module node exists
-        assert "python://test_module" in graph.nodes
-        assert graph.nodes["python://test_module"].type == "module"
+        # Check module symbol exists
+        assert "python://test_module" in graph.symbols
+        assert graph.symbols["python://test_module"].type == "module"
 
     def test_extract_function(self, tmp_path: Path) -> None:
         """
@@ -59,10 +59,10 @@ async def async_func():
             repo_root=tmp_path, file_path=tmp_path / "funcs.py", graph=graph
         )
 
-        # Check function nodes
-        assert "python://funcs:standalone_func" in graph.nodes
-        assert "python://funcs:async_func" in graph.nodes
-        assert graph.nodes["python://funcs:standalone_func"].type == "function"
+        # Check function symbols
+        assert "python://funcs:standalone_func" in graph.symbols
+        assert "python://funcs:async_func" in graph.symbols
+        assert graph.symbols["python://funcs:standalone_func"].type == "function"
 
     def test_extract_class(self, tmp_path: Path) -> None:
         """
@@ -86,9 +86,9 @@ class DerivedClass(BaseClass):
             repo_root=tmp_path, file_path=tmp_path / "classes.py", graph=graph
         )
 
-        # Check class node
-        assert "python://classes:BaseClass" in graph.nodes
-        assert "python://classes:DerivedClass" in graph.nodes
+        # Check class symbol
+        assert "python://classes:BaseClass" in graph.symbols
+        assert "python://classes:DerivedClass" in graph.symbols
 
         # Check inheritance edge
         inherits_edges = [e for e in graph.edges if e.type == "INHERITS"]
@@ -177,10 +177,10 @@ class Calculator:
             repo_root=tmp_path, file_path=tmp_path / "methods.py", graph=graph
         )
 
-        # Should have method nodes
-        assert "python://methods:Calculator.add" in graph.nodes
-        assert "python://methods:Calculator.sum_list" in graph.nodes
-        assert "python://methods:Calculator.calculate" in graph.nodes
+        # Should have method symbols
+        assert "python://methods:Calculator.add" in graph.symbols
+        assert "python://methods:Calculator.sum_list" in graph.symbols
+        assert "python://methods:Calculator.calculate" in graph.symbols
 
 
 class TestPythonExtractorEdgeCases:
@@ -200,8 +200,8 @@ class TestPythonExtractorEdgeCases:
             repo_root=tmp_path, file_path=tmp_path / "empty.py", graph=graph
         )
 
-        # Should still create module node
-        assert "python://empty" in graph.nodes
+        # Should still create module symbol
+        assert "python://empty" in graph.symbols
 
     def test_syntax_error(self, tmp_path: Path) -> None:
         """
@@ -218,10 +218,10 @@ def bad_syntax(
             repo_root=tmp_path, file_path=tmp_path / "broken.py", graph=graph
         )
 
-        # Should create error node
-        assert "python://broken.py" in graph.nodes
-        assert graph.nodes["python://broken.py"].type == "file"
-        assert "parse_error" in graph.nodes["python://broken.py"].metadata
+        # Should create error symbol
+        assert "python://broken.py" in graph.symbols
+        assert graph.symbols["python://broken.py"].type == "file"
+        assert "parse_error" in graph.symbols["python://broken.py"].metadata
 
     def test_nested_functions(self, tmp_path: Path) -> None:
         """
@@ -241,7 +241,7 @@ def outer():
         )
 
         # Should extract outer function
-        assert "python://nested:outer" in graph.nodes
+        assert "python://nested:outer" in graph.symbols
 
         # Inner function handling depends on implementation
         # At minimum, outer should be present
@@ -264,7 +264,7 @@ from .. import sibling
         )
 
         # Module should be created
-        assert "python://pkg.submodule" in graph.nodes
+        assert "python://pkg.submodule" in graph.symbols
 
 
 class TestPythonExtractorResolution:

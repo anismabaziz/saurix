@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.graph import GraphStore
-from ..core.models import Edge, Node
+from ..core.models import Edge, Symbol
 from .base import Extractor
 from .tree_sitter_support import (
     find_first_desc,
@@ -41,8 +41,8 @@ class TypeScriptExtractor(Extractor):
 
         module_name = rel.rsplit(".", 1)[0].replace("/", ".")
         module_id = f"typescript://{module_name}"
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=module_id,
                 type="module",
                 language=self.language,
@@ -129,8 +129,8 @@ class TypeScriptExtractor(Extractor):
                                     target_id = (
                                         f"typescript://{target.replace('/', '.')}"
                                     )
-                                    graph.add_node(
-                                        Node(
+                                    graph.add_symbol(
+                                        Symbol(
                                             id=target_id,
                                             type="module",
                                             language=self.language,
@@ -161,8 +161,8 @@ class TypeScriptExtractor(Extractor):
                         target = stripped_string(source, string_node)
                         if target:
                             target_id = f"typescript://{target.replace('/', '.')}"
-                            graph.add_node(
-                                Node(
+                            graph.add_symbol(
+                                Symbol(
                                     id=target_id,
                                     type="module",
                                     language=self.language,
@@ -194,8 +194,8 @@ class TypeScriptExtractor(Extractor):
                     target = stripped_string(source, string_node)
                     if target:
                         target_id = f"typescript://{target.replace('/', '.')}"
-                        graph.add_node(
-                            Node(
+                        graph.add_symbol(
+                            Symbol(
                                 id=target_id,
                                 type="module",
                                 language=self.language,
@@ -222,8 +222,8 @@ class TypeScriptExtractor(Extractor):
             target = stripped_string(source, s)
             if target:
                 target_id = f"typescript://{target.replace('/', '.')}"
-                graph.add_node(
-                    Node(
+                graph.add_symbol(
+                    Symbol(
                         id=target_id, type="module", language=self.language, name=target
                     )
                 )
@@ -308,8 +308,8 @@ class TypeScriptExtractor(Extractor):
         local_symbols[class_name] = class_id
         class_members[class_name] = {}
 
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=class_id,
                 type="class",
                 language=self.language,
@@ -337,8 +337,8 @@ class TypeScriptExtractor(Extractor):
                 if parent:
                     parent_name = text_of(source, parent).strip()
                     parent_id = f"typescript://{parent_name}"  # Best effort resolution
-                    graph.add_node(
-                        Node(
+                    graph.add_symbol(
+                        Symbol(
                             id=parent_id,
                             type="class",
                             language=self.language,
@@ -378,8 +378,8 @@ class TypeScriptExtractor(Extractor):
                             member_id  # Also add to local symbols for simple resolution
                         )
 
-                        graph.add_node(
-                            Node(
+                        graph.add_symbol(
+                            Symbol(
                                 id=member_id,
                                 type=member_type,
                                 language=self.language,
@@ -426,8 +426,8 @@ class TypeScriptExtractor(Extractor):
         interface_id = f"{module_id}:{name}"
         local_symbols[name] = interface_id
 
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=interface_id,
                 type="interface",
                 language=self.language,
@@ -530,8 +530,8 @@ class TypeScriptExtractor(Extractor):
                 node, source, module_id, local_symbols, class_members
             )
 
-            graph.add_node(
-                Node(
+            graph.add_symbol(
+                Symbol(
                     id=target_id,
                     type="symbol",
                     language=self.language,
@@ -559,7 +559,7 @@ class TypeScriptExtractor(Extractor):
         class_members: dict[str, dict[str, str]],
     ) -> str:
         """
-        Find the enclosing function or class for a node.
+        Find the enclosing function or class for a syntax node.
         """
         current = node
         while current:
@@ -592,14 +592,14 @@ class TypeScriptExtractor(Extractor):
         line: int,
     ) -> None:
         """
-        Create function node and containment edge for discovered symbol.
+        Create the function Symbol and its containment Edge for a discovered name.
         """
         if not name:
             return
         fn_id = f"{module_id}:{name}"
         local_symbols[name] = fn_id
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=fn_id,
                 type="function",
                 language=self.language,

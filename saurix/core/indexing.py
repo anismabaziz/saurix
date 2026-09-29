@@ -15,7 +15,7 @@ from pathlib import Path
 from ..analysis.base import Extractor
 from .config import config
 from .graph import GraphStore
-from .models import Node
+from .models import Symbol
 
 logger = logging.getLogger(__name__)
 
@@ -126,9 +126,9 @@ class RepositoryIndexer:
         """
         files = self._scan_files()
 
-        # Initialize the graph with a root repository node
-        self.graph.add_node(
-            Node(
+        # Initialize the graph with a root repository Symbol
+        self.graph.add_symbol(
+            Symbol(
                 id=f"repo://{self.root.name}",
                 type="repo",
                 language="meta",
@@ -158,8 +158,8 @@ class RepositoryIndexer:
                     repo_root=self.root, file_path=file_path, graph=temp_graph
                 )
                 # Merge temp graph into main graph
-                for node in temp_graph.nodes.values():
-                    self.graph.add_node(node)
+                for symbol in temp_graph.symbols.values():
+                    self.graph.add_symbol(symbol)
                 for edge in temp_graph.edges:
                     self.graph.add_edge(edge)
 

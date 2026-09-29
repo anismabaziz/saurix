@@ -164,7 +164,7 @@ def interactive_help() -> str:
 
 
 def render_stats_panel(stats: dict[str, object], ui: UI) -> None:
-    title = f"Nodes: {stats.get('nodes', 0)} | Edges: {stats.get('edges', 0)}"
+    title = f"Symbols: {stats.get('symbols', 0)} | Edges: {stats.get('edges', 0)}"
     ui.print(Panel.fit(title, title="Graph Stats", border_style="cyan"))
     _render_unified_stats_table(stats, ui)
 
@@ -182,7 +182,7 @@ def _render_unified_stats_table(stats: dict[str, object], ui: UI) -> None:
     _append_coverage_rows(
         table, "Extraction Coverage", stats.get("extraction_coverage", {})
     )
-    _append_dict_rows(table, "Node Types", stats.get("node_types", {}))
+    _append_dict_rows(table, "Symbol Types", stats.get("symbol_types", {}))
     _append_dict_rows(table, "Edge Types", stats.get("edge_types", {}))
     _append_dict_rows(table, "Languages", stats.get("languages", {}))
 
@@ -229,7 +229,7 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
         "excluded_dirs",
         "scanned_files",
         "indexed_files",
-        "nodes",
+        "symbols",
         "edges",
     ]:
         if key in summary:
