@@ -38,14 +38,25 @@ def find_symbol(
     return rows[:limit]
 
 
-def _resolve_exact_ids(graph: GraphStore, symbol: str) -> list[str]:
+def exact_symbol_ids(graph: GraphStore, symbol: str) -> list[str]:
     """
-    Shared exact resolution: exact id, then exact name via index. No fuzzy fallback.
+    Resolve a symbol to ids without falling back to a fuzzy match: exact id first,
+    then exact name through the name index.
+
+    An empty result means the graph holds no such symbol, which is a different
+    answer from a symbol that simply has no callers.
     """
     if symbol in graph.nodes:
         return [symbol]
-    exact = [node.id for node in graph.get_nodes_by_name(symbol)]
-    return exact
+    return [node.id for node in graph.get_nodes_by_name(symbol)]
+
+
+def file_symbol_ids(graph: GraphStore, file_path: str) -> list[str]:
+    """
+    Return the ids of the symbols a file holds, empty when the graph has no such
+    file.
+    """
+    return [node.id for node in graph.nodes.values() if node.file == file_path]
 
 
 def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[str]:
@@ -57,7 +68,7 @@ def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[
     2. Exact name match via indexed lookup.
     3. Fuzzy substring match.
     """
-    exact = _resolve_exact_ids(graph, symbol)
+    exact = exact_symbol_ids(graph, symbol)
     if exact:
         return exact[:limit]
 
@@ -71,7 +82,7 @@ def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     traversal queries.
     """
     # Use exact resolution only to preserve pre-collapse semantics (no fuzzy callers)
-    exact_ids = _resolve_exact_ids(graph, symbol)
+    exact_ids = exact_symbol_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
 
     rows: list[dict[str, str]] = []
@@ -96,7 +107,7 @@ def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     """
     List CALLS edges outgoing from `symbol`, sharing exact resolution.
     """
-    exact_ids = _resolve_exact_ids(graph, symbol)
+    exact_ids = exact_symbol_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
 
     rows: list[dict[str, str]] = []
@@ -123,7 +134,7 @@ def related_files(
     """
     Find files related to `file_path` via undirected graph neighborhood.
     """
-    file_nodes = [n.id for n in graph.nodes.values() if n.file == file_path]
+    file_nodes = file_symbol_ids(graph, file_path)
     if not file_nodes:
         return []
 

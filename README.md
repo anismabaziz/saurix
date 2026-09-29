@@ -75,11 +75,53 @@ saurix-mcp
 
 ## 5) AI Agent Integration (MCP)
 
-Saurix is optimized for agentic workflows. It exposes tools that help agents understand:
+Saurix is optimized for agentic workflows. The server exposes eight tools:
+
+| Tool               | Arguments                                | Returns                                       |
+| ------------------ | ---------------------------------------- | --------------------------------------------- |
+| `index_repo`       | `source`, `out`                          | What was indexed, and where the graph landed  |
+| `stats`            | `graph`                                  | Symbol, edge, language, and coverage totals   |
+| `find_symbol`      | `graph`, `query`, `limit`                | Symbols whose name or id matches              |
+| `callers`          | `graph`, `symbol`, `limit`               | `CALLS` edges pointing at the symbol          |
+| `callees`          | `graph`, `symbol`, `limit`               | `CALLS` edges the symbol reaches              |
+| `path_between`     | `graph`, `source`, `target`, `max_depth` | The shortest directed walk between two        |
+| `impact_of_symbol` | `graph`, `symbol`, `depth`, `limit`      | The reverse neighbourhood of a change         |
+| `related_files`    | `graph`, `file`, `depth`, `limit`        | Neighbour files of one file path              |
+
+They help agents answer three kinds of question:
 
 1. **Context Discovery**: `find_symbol` and `related_files`.
-2. **Behavioral Mapping**: `callers` and `path_between`.
+2. **Behavioral Mapping**: `callers`, `callees`, and `path_between`.
 3. **Risk Assessment**: `impact_of_symbol`.
+
+Every tool answers with the same envelope: `ok`, then either `data` or an
+`error` of `code` and `message` (never both), then `meta` with the
+`duration_ms` the call took. Tools that answer with rows add a `count` of them.
+A failure is timed like a success, so the shape does not change with the outcome.
+
+Reading a graph, or looking something up in it, fails the same way whichever
+tool was asked:
+
+| Code               | Meaning                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `GRAPH_NOT_FOUND`  | No graph at the path given, and none at the default path either |
+| `INVALID_GRAPH`    | The file is not valid JSON, or not a Saurix graph              |
+| `GRAPH_UNREADABLE` | The path exists but could not be read                          |
+| `SYMBOL_NOT_FOUND` | The graph holds no symbol with the name or id given            |
+| `FILE_NOT_FOUND`   | The graph holds no symbol belonging to the file path given     |
+| `INVALID_SOURCE`   | `index_repo` was pointed at neither a path nor a GitHub URL     |
+
+Two more sets of codes come from the tool's own work rather than its arguments:
+`index_repo` reports `SOURCE_NOT_FOUND`, `PERMISSION_DENIED`, or `INDEX_FAILED`,
+and a query that fails underneath a tool it had already accepted reports
+`STATS_FAILED`, `FIND_FAILED`, `CALLERS_FAILED`, `CALLEES_FAILED`,
+`PATH_FAILED`, `IMPACT_FAILED`, or `RELATED_FAILED`.
+
+A search that matches nothing is not one of these: `find_symbol` returns an
+empty list, and so does a `path_between` whose two ends the graph holds but
+does not connect. A tool asked about a *specific* symbol is stricter, and
+reports `SYMBOL_NOT_FOUND` rather than guessing which one was meant — pass an id
+from `find_symbol` if a name is not enough.
 
 Configure your agent with the `saurix-mcp` entry point. Once configured, the AI client (e.g., Claude Desktop) will automatically manage the server lifecycle—starting it in the background when needed and stopping it when the app closes. No manual terminal execution is required.
 
