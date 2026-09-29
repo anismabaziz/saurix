@@ -1,25 +1,43 @@
 from __future__ import annotations
 
-import warnings
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tree_sitter import Parser
 
 
-def get_parser(language: str):
+class GrammarUnavailableError(RuntimeError):
+    """
+    Raised when the tree-sitter grammar for a language cannot be built.
+
+    Each language has exactly one extraction path, so an unusable grammar is a
+    broken install rather than a reason to extract something worse.
+    """
+
+
+def get_parser(language: str) -> Parser:
+    """
+    Build the tree-sitter parser for a language, or fail loudly.
+
+    Grammars come from tree-sitter-language-pack, the maintained bundle. A
+    grammar that will not load raises instead of returning nothing, so a
+    broken install surfaces at startup rather than as quietly thinner graphs.
+    """
     try:
-        from tree_sitter_languages import get_parser as _get_parser
-    except Exception:
-        return None
+        from tree_sitter_language_pack import get_parser as _get_parser
+    except ImportError as e:
+        raise GrammarUnavailableError(
+            "tree-sitter-language-pack is not installed. "
+            "Reinstall saurix to restore the grammars it needs."
+        ) from e
 
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=FutureWarning,
-                message=r"Language\(path, name\) is deprecated.*",
-            )
-            return _get_parser(language)
-    except Exception:
-        return None
+        return _get_parser(language)
+    except Exception as e:
+        raise GrammarUnavailableError(
+            f"No tree-sitter grammar could be loaded for {language!r}: {e}"
+        ) from e
 
 
 def walk(node) -> Iterator:

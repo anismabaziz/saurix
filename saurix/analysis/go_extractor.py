@@ -1,16 +1,14 @@
 """
-Go extractor using Tree-sitter with regex fallback.
+Go extractor using Tree-sitter.
 """
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from ..core.graph import GraphStore
 from ..core.models import Edge, Node
 from .base import Extractor
-from .regex_lang import RegexLangExtractor
 from .tree_sitter_support import (
     find_first_desc,
     get_parser,
@@ -21,33 +19,19 @@ from .tree_sitter_support import (
 
 
 class GoExtractor(Extractor):
+    """
+    Language-specific extractor for Go, built on the Go tree-sitter grammar.
+    """
+
     language = "go"
 
     def __init__(self) -> None:
-        self._fallback = RegexLangExtractor(
-            language="go",
-            import_pattern=re.compile(
-                r"import\s+(?:\(\s*)?(?:[\w\.]+\s+)?\"(?P<target>[^\"]+)\"",
-                re.MULTILINE,
-            ),
-            function_pattern=re.compile(
-                r"func\s+(?:\([^\)]*\)\s*)?(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\(",
-                re.MULTILINE,
-            ),
-            call_pattern=re.compile(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\("),
-        )
         self._parser = get_parser("go")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
         """
         Extract module/import/function/call relationships from Go files.
         """
-        if self._parser is None:
-            self._fallback.extract(
-                repo_root=repo_root, file_path=file_path, graph=graph
-            )
-            return
-
         rel = file_path.relative_to(repo_root).as_posix()
         source = file_path.read_bytes()
         root = self._parser.parse(source).root_node

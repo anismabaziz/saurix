@@ -1,17 +1,15 @@
 """
-TypeScript extractor using Tree-sitter with regex fallback.
+TypeScript extractor using Tree-sitter.
 """
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Any
 
 from ..core.graph import GraphStore
 from ..core.models import Edge, Node
 from .base import Extractor
-from .regex_lang import RegexLangExtractor
 from .tree_sitter_support import (
     find_first_desc,
     get_parser,
@@ -22,33 +20,20 @@ from .tree_sitter_support import (
 
 
 class TypeScriptExtractor(Extractor):
+    """
+    Language-specific extractor for TypeScript and JavaScript, built on the
+    TypeScript tree-sitter grammar.
+    """
+
     language = "typescript"
 
     def __init__(self) -> None:
-        self._fallback = RegexLangExtractor(
-            language="typescript",
-            import_pattern=re.compile(
-                r"(?:import\s+.+?\s+from\s+['\"](?P<target>[^'\"]+)['\"]|import\s+['\"](?P<target2>[^'\"]+)['\"])",
-                re.MULTILINE,
-            ),
-            function_pattern=re.compile(
-                r"(?:function\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\(|(?:const|let|var)\s+(?P<name2>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*\([^\)]*\)\s*=>)",
-                re.MULTILINE,
-            ),
-            call_pattern=re.compile(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\("),
-        )
         self._parser = get_parser("typescript")
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
         """
         Extract module/import/function/call relationships from TS files.
         """
-        if self._parser is None:
-            self._fallback.extract(
-                repo_root=repo_root, file_path=file_path, graph=graph
-            )
-            return
-
         rel = file_path.relative_to(repo_root).as_posix()
         source = file_path.read_bytes()
         tree = self._parser.parse(source)

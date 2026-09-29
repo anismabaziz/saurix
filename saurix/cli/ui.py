@@ -216,9 +216,6 @@ def _append_coverage_rows(table: Table, section: str, data: object) -> None:
         table.add_row(
             section, f"{lang}.coverage_percent", f"{row.get('coverage_percent', 0.0)}%"
         )
-        table.add_row(
-            section, f"{lang}.parser_mode", str(row.get("parser_mode", "unknown"))
-        )
 
 
 def render_index_summary(summary: dict[str, object], ui: UI) -> None:

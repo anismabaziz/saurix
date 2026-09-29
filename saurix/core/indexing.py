@@ -12,6 +12,7 @@ import logging
 from collections.abc import Callable
 from pathlib import Path
 
+from ..analysis.base import Extractor
 from .config import config
 from .graph import GraphStore
 from .models import Node
@@ -73,19 +74,30 @@ class RepositoryIndexer:
         self.exclude_dirs = exclude_dirs or config.exclude_dirs
         self.on_progress = on_progress
         self.graph = GraphStore()
-        # Lazy import to avoid circular init between core and analysis
-        from ..analysis.go_extractor import GoExtractor
-        from ..analysis.java_extractor import JavaExtractor
-        from ..analysis.python_extractor import PythonExtractor
-        from ..analysis.typescript_extractor import TypeScriptExtractor
+        self._extractors: dict[str, Extractor] = {}
 
-        # Pre-initialize heavy-weight extractors
-        self.extractors = {
-            "python": PythonExtractor(),
-            "typescript": TypeScriptExtractor(),
-            "go": GoExtractor(),
-            "java": JavaExtractor(),
-        }
+    def _extractor_for(self, language: str) -> Extractor:
+        """
+        Return the Extractor for a language, building it on first use.
+
+        Construction is deferred so a repo holding only Python never loads the
+        Go grammar: a grammar that will not load should fail the languages that
+        need it, not every language in the tool.
+        """
+        if language not in self._extractors:
+            # Lazy import to avoid circular init between core and analysis
+            from ..analysis.go_extractor import GoExtractor
+            from ..analysis.java_extractor import JavaExtractor
+            from ..analysis.python_extractor import PythonExtractor
+            from ..analysis.typescript_extractor import TypeScriptExtractor
+
+            self._extractors[language] = {
+                "python": PythonExtractor,
+                "typescript": TypeScriptExtractor,
+                "go": GoExtractor,
+                "java": JavaExtractor,
+            }[language]()
+        return self._extractors[language]
 
     def _scan_files(self) -> list[Path]:
         """
@@ -128,7 +140,6 @@ class RepositoryIndexer:
         indexed = 0
         files_by_language: dict[str, int] = {}
         indexed_by_language: dict[str, int] = {}
-        parser_mode_by_language: dict[str, str] = {}
 
         total_files = len(files)
         for i, file_path in enumerate(files):
@@ -139,19 +150,7 @@ class RepositoryIndexer:
             rel = file_path.relative_to(self.root).as_posix()
             files_by_language[lang] = files_by_language.get(lang, 0) + 1
 
-            extractor = self.extractors.get(lang)
-            if extractor is None:
-                continue
-            # Identify which parsing strategy is actually being used
-            parser_mode = (
-                "ast"
-                if lang == "python"
-                else (
-                    "tree-sitter"
-                    if getattr(extractor, "_parser", None)
-                    else "regex-fallback"
-                )
-            )
+            extractor = self._extractor_for(lang)
 
             temp_graph = GraphStore()
             try:
@@ -166,7 +165,6 @@ class RepositoryIndexer:
 
                 indexed += 1
                 indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
-                parser_mode_by_language[lang] = parser_mode
             except Exception as e:
                 logger.error(f"Failed to extract {rel}: {e}")
 
@@ -182,7 +180,6 @@ class RepositoryIndexer:
                 "files_seen": total,
                 "files_indexed": indexed_count,
                 "coverage_percent": pct,
-                "parser_mode": parser_mode_by_language.get(lang, "unknown"),
             }
 
         self.graph.set_metadata("extraction_coverage", coverage)
