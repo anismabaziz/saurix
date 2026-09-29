@@ -29,6 +29,19 @@ did in its glossary.
   package metadata. It used to be written out twice, and the two copies disagreed:
   `saurix.__version__` said `0.1.0` while PyPI had `0.2.0`.
 
+### Added
+
+- **The accuracy report is published.** `docs/accuracy.md` states how many of the
+  calls that really happened in a pinned target repository were also inferred as
+  Edges, and it says plainly that this is precision on observed edges and not
+  recall. The misses are listed rather than summarized away, the languages and
+  call shapes where the pipeline is weakest are named, and the report says it is
+  a snapshot rather than a gate. Regenerate it with `uv run scripts/accuracy.py`.
+- **A hand-labeled sample covers what a trace cannot reach.** Click's example
+  programs, which its test suite never imports, were read by hand and every call
+  written to `docs/accuracy/click-examples.labels`. It is reported as a second
+  figure, not folded into the trace's, because the two populations are different.
+
 ### Removed
 
 - **No deprecation alias for `Node`.** Breaking a public name in a pre-1.0 release is

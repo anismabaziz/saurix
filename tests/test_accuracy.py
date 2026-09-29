@@ -150,13 +150,13 @@ def measured(
     it rendered, and the commit it measured.
     """
     workdir = tmp_path_factory.mktemp("accuracy")
-    comparison = run_accuracy(
+    measurement = run_accuracy(
         _target(origin, TEST_COMMAND),
         workdir,
         interpreter=Path(sys.executable),
         install=False,
     )
-    return render_markdown(comparison), comparison.commit
+    return render_markdown(measurement), measurement.comparison.commit
 
 
 @pytest.fixture(scope="module")
@@ -272,14 +272,13 @@ class TestReportOnAFailedRun:
         """
         A suite that runs but traces nothing is a failed measurement.
         """
-        report = render_markdown(
-            run_accuracy(
-                _target(origin, SILENT_COMMAND),
-                tmp_path / "silent",
-                interpreter=Path(sys.executable),
-                install=False,
-            )
+        measurement = run_accuracy(
+            _target(origin, SILENT_COMMAND),
+            tmp_path / "silent",
+            interpreter=Path(sys.executable),
+            install=False,
         )
+        report = render_markdown(measurement)
         assert "## This run failed" in report
         assert "100.00%" not in report
 
@@ -304,7 +303,7 @@ class TestTheHandLabeledTrace:
             tmp_path_factory.mktemp("accuracy-object"),
             interpreter=Path(sys.executable),
             install=False,
-        )
+        ).comparison
 
     def test_every_matched_call_really_happened(self, comparison: Comparison) -> None:
         """
@@ -349,6 +348,10 @@ class TestTheCommandSurface:
                 "--python",
                 sys.executable,
                 "--no-install",
+                # The published sample labels click's examples, which the
+                # fixture does not have, so this run measures the trace alone.
+                "--labels",
+                "",
                 "--workdir",
                 str(workdir / "run"),
                 "--out",

@@ -3,7 +3,10 @@ Saurix Accuracy Harness
 
 Traces a target repository's own test suite at runtime, records the calls that
 actually happen, and reports how many of the CALLS Edges Saurix inferred match
-one. The result is published as a snapshot, not a gate: the target is a foreign
+one. A hand-labeled sample covers the region no test reaches, and is reported
+as a second figure rather than folded into the first.
+
+The result is published as a snapshot, not a gate: the target is a foreign
 repository whose suite needs its own dependencies, which is a slow and fragile
 thing to hang on every push.
 
@@ -35,6 +38,11 @@ DEFAULT_TARGET = Target(
     test_command=("-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider"),
     requirements=("-e", ".", "-r", "requirements/tests.txt"),
 )
+
+# The hand-labeled sample, committed next to the report it backs. Its files sit
+# under `examples/`, which click's own suite never imports, so it measures the
+# region the trace cannot reach.
+DEFAULT_LABELS = "docs/accuracy/click-examples.labels"
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -81,6 +89,15 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Do not install anything, which is what --python is for",
     )
     parser.add_argument(
+        "--labels",
+        default=DEFAULT_LABELS,
+        help=(
+            "Hand-labeled sample to check the graph against, covering the "
+            "region no test reaches. Pass an empty string to measure the trace "
+            "alone"
+        ),
+    )
+    parser.add_argument(
         "--out",
         default="docs/accuracy.md",
         help="Destination path for the markdown report",
@@ -108,15 +125,18 @@ def main(argv: list[str] | None = None) -> int:
         requirements=tuple(shlex.split(args.requirements)),
     )
 
-    comparison = run_accuracy(
+    labels = args.labels.strip()
+    measurement = run_accuracy(
         target,
         root / args.workdir,
         interpreter=Path(args.python) if args.python else None,
         install=not args.no_install,
+        labels=(root / labels) if labels else None,
     )
+    comparison = measurement.comparison
     out = Path(args.out) if Path(args.out).is_absolute() else root / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render_markdown(comparison), encoding="utf-8")
+    out.write_text(render_markdown(measurement), encoding="utf-8")
 
     precision = comparison.precision
     if precision is None:
@@ -132,6 +152,12 @@ def main(argv: list[str] | None = None) -> int:
         f"{comparison.matched_count} of {comparison.observed_total} observed "
         f"calls matched ({precision * 100:.2f}%)."
     )
+    if measurement.sample is not None:
+        print(
+            f"Hand-labeled sample: {len(measurement.sample.confirmed)} of "
+            f"{measurement.sample.inferred_in_region} inferred edges confirmed "
+            f"({measurement.sample.precision * 100:.2f}%), a separate figure."
+        )
     print(f"Report written to {out}")
     return 0
 

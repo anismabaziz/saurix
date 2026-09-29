@@ -16,6 +16,13 @@ from ..core.graph import GraphStore
 
 SCHEME = "python://"
 
+# What the report says when a trace observed nothing. It lives here rather than
+# in the renderer because the harness raises it as a failure reason, and the
+# renderer must not be imported to name a failure.
+NO_TRACE = """\
+The trace recorded no calls between repository symbols, so no figure is
+reported. A run that could not be measured is not a run with a good score."""
+
 # How many rows a table in the report shows before it starts counting instead.
 ROW_LIMIT = 25
 

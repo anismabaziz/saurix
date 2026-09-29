@@ -151,6 +151,23 @@ generator on every test run and fails when the committed documents no longer
 match the current code, or when any document names a module or file path that
 no longer exists.
 
+### Checking Call Edge Accuracy
+
+How accurate the inferred call edges are is measured, not asserted. The
+accuracy report ([docs/accuracy.md](docs/accuracy.md)) pins a target repository
+to one commit, traces its own test suite at runtime, and reports how many of
+the calls that really happened the pipeline also inferred. A hand-labeled sample
+covers the region no test reaches, and is reported as a second figure rather
+than folded into the first. Regenerate it with:
+
+```bash
+uv run scripts/accuracy.py
+```
+
+It is a published snapshot, not a CI gate: it clones a foreign repository and
+builds an environment for it, which is too slow and fragile to run on every
+push. The report says so, and says what it would take to change that.
+
 ### Testing the MCP Server
 
 You can test the MCP integration without a full IDE using the **MCP Inspector**:

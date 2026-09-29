@@ -21,8 +21,8 @@ from pathlib import Path
 from ..core.config import config
 from ..core.indexing import build_graph
 from . import tracer as tracer_module
-from .matching import Comparison, ObservedCall, Symbol, compare
-from .report import NO_TRACE
+from .labels import SampleCheck, compare_sample, load_sample
+from .matching import NO_TRACE, Comparison, ObservedCall, Symbol, compare
 
 BOOTSTRAP_NAME = "sitecustomize.py"
 TRACER_NAME = "saurix_trace.py"
@@ -241,15 +241,35 @@ def load_observed(traces: Path) -> list[ObservedCall]:
     ]
 
 
+@dataclass(frozen=True)
+class Measurement:
+    """
+    One measured run: the trace comparison, and the hand-labeled sample checked
+    against the same graph.
+
+    The two are kept apart because they are apart. A trace can only judge what
+    a test suite executes, and a hand label can only judge what somebody read.
+    Carrying them as one object is a convenience, not a claim that they measure
+    the same thing.
+    """
+
+    comparison: Comparison
+    sample: SampleCheck | None = None
+
+
 def run_accuracy(
     target: Target,
     workdir: Path,
     *,
     interpreter: Path | None = None,
     install: bool = True,
-) -> Comparison:
+    labels: Path | None = None,
+) -> Measurement:
     """
     Measure the target once and return the comparison, failed runs included.
+
+    `labels` points at a hand-labeled sample. When it is given, the graph is
+    checked against it as well, which covers the region no test reaches.
     """
     command = " ".join(target.test_command)
     commit = target.commit
@@ -273,17 +293,23 @@ def run_accuracy(
             raise TraceFailure(NO_TRACE)
         graph = build_graph(repo).graph
     except TraceFailure as failure:
-        return Comparison(
+        return Measurement(
+            comparison=Comparison(
+                repository=target.repository,
+                commit=commit,
+                test_command=command,
+                failure=str(failure),
+            )
+        )
+
+    sample = compare_sample(load_sample(labels), graph) if labels else None
+    return Measurement(
+        comparison=compare(
             repository=target.repository,
             commit=commit,
             test_command=command,
-            failure=str(failure),
-        )
-
-    return compare(
-        repository=target.repository,
-        commit=commit,
-        test_command=command,
-        observed=observed,
-        graph=graph,
+            observed=observed,
+            graph=graph,
+        ),
+        sample=sample,
     )
