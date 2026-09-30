@@ -157,13 +157,12 @@ def related_files(
         if not frontier:
             break
 
-    files = sorted(
-        {
-            graph.symbols[symbol_id].file
-            for symbol_id in visited
-            if symbol_id in graph.symbols and graph.symbols[symbol_id].file
-        }
-    )
+    files_set: set[str] = set()
+    for symbol_id in visited:
+        sym = graph.symbols.get(symbol_id)
+        if sym is not None and sym.file:
+            files_set.add(sym.file)
+    files = sorted(files_set)
     return files[:limit]
 
 
@@ -216,7 +215,7 @@ def shortest_path(
         return []
 
     chain: list[str] = []
-    cursor = hit
+    cursor: str | None = hit
     while cursor is not None:
         chain.append(cursor)
         cursor = prev[cursor][0]

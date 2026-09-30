@@ -106,12 +106,13 @@ class RepositoryIndexer:
             from ..analysis.python_extractor import PythonExtractor
             from ..analysis.typescript_extractor import TypeScriptExtractor
 
-            self._extractors[language] = {
+            extractor_cls: dict[str, Callable[[], Extractor]] = {
                 "python": PythonExtractor,
                 "typescript": TypeScriptExtractor,
                 "go": GoExtractor,
                 "java": JavaExtractor,
-            }[language]()
+            }
+            self._extractors[language] = extractor_cls[language]()
         return self._extractors[language]
 
     def _scan_files(self) -> list[Path]:

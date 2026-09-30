@@ -141,6 +141,7 @@ def cmd_stats(state: ShellState) -> None:
     """
     if not _ensure_graph(state):
         return
+    assert state.loaded_graph is not None
     stats = state.loaded_graph.stats()
     print_json(stats, state.ui) if state.raw_mode else render_stats_panel(
         stats, state.ui
@@ -158,6 +159,7 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = find_symbol(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Find Results",
@@ -178,6 +180,7 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = callers_of(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Callers",
@@ -203,6 +206,7 @@ def cmd_callees(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = callees_of(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Callees",
@@ -231,6 +235,7 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
     if depth is None or limit is None:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = [
         {"file": p}
         for p in related_files(state.loaded_graph, rest[0], depth=depth, limit=limit)
@@ -253,6 +258,7 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
     if max_depth is None:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
+    assert state.loaded_graph is not None
     rows = shortest_path(state.loaded_graph, rest[0], rest[1], max_depth=max_depth)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Path",
@@ -282,6 +288,7 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
     if depth is None or limit is None:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = impact_of(state.loaded_graph, rest[0], depth=depth, limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Blast Radius",

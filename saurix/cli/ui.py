@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from rich.console import Console
 from rich.json import JSON
@@ -248,7 +248,9 @@ def render_table(
         return
     table = Table(title=title, header_style="bold cyan")
     for key, label in columns:
-        justify = "right" if key in {"line", "distance", "step"} else "left"
+        justify: Literal["default", "left", "center", "right", "full"] = (
+            "right" if key in {"line", "distance", "step"} else "left"
+        )
         table.add_column(label, justify=justify)
     for row in rows:
         table.add_row(*[_truncate(str(row.get(key, "")), 90) for key, _ in columns])

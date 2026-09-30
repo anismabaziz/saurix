@@ -406,8 +406,6 @@ class TestThePublishedReport:
             )
             for _ in range(3)
         )
-        check = SampleCheck(
-            confirmed=unresolved, unconfirmed=(), missing=()
-        )
+        check = SampleCheck(confirmed=unresolved, unconfirmed=(), missing=())
         flat = _flat(render_markdown(self._measured_with_sample(check)))
         assert "None of the 3 is resolved" in flat
