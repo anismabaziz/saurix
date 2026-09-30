@@ -15,7 +15,7 @@ It plugs into Claude Desktop, Cursor, and OpenCode through the Model Context Pro
 
 | CLI | Dashboard | Agent tools |
 | --- | --- | --- |
-| ![CLI session: index, stats, find, impact](docs/assets/cli-workflow.png) | ![Generated dashboard with the 2D graph view](docs/assets/visual-workflow.png) | ![Agent calling index_repo, find_symbol, path_between, impact_of_symbol](docs/assets/mcp-workflow.png) |
+| ![CLI session: index, stats, find, impact](docs/assets/cli-workflow.png) | ![Generated dashboard with the 2D graph view](docs/assets/visual-workflow.png) | ![Agent calling find_symbol, path_between, impact_of_symbol and getting rows back](docs/assets/mcp-workflow.png) |
 
 One number to hold or doubt: on `pallets/click` at `874ca2bc`, 7.35% of the calls its own test suite actually made were edges Saurix had inferred. That is precision on observed calls, not recall, and every miss is listed in the open. Method, limits, and the second figure from a hand-labeled sample: [docs/accuracy.md](docs/accuracy.md).
 
@@ -175,6 +175,25 @@ uv run scripts/accuracy.py
 It is a published snapshot, not a CI gate: it clones a foreign repository and
 builds an environment for it, which is too slow and fragile to run on every
 push. The report says so, and says what it would take to change that.
+
+### Regenerating the demo assets
+
+The recording and the three screenshots at the top of this README are captured
+from real runs, not drawn. `scripts/capture_demo.py` copies this checkout to a
+scratch directory, drives `init`, `stats`, `find` and `impact` through a
+pseudo-terminal, photographs the dashboard the run generated, and replays the
+MCP tool calls the documentation generator makes:
+
+```bash
+uv run scripts/capture_demo.py
+```
+
+It needs Pillow and a Chromium from Playwright, both in the dev group, and a
+monospaced font on the machine. The pinned force-graph bundle is fetched once
+and cached under `tmp/`, so a rerun needs no network. `--check` reports captures
+that are missing or have outgrown their size budget without taking new ones.
+What each file is, and how the dashboard capture doubles as the portfolio card
+image, is written up in [docs/assets/README.md](docs/assets/README.md).
 
 ### Testing the MCP server
 

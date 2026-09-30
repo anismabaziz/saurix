@@ -362,7 +362,9 @@ def cmd_init(state: ShellState) -> None:
     ui.print("  Type: command")
     ui.print(f"  Command: uv --directory {cwd} run saurix-mcp")
     ui.print()
-    ui.info(f"Open [bold]{report_path}[/] in your browser to see the 2D map.")
+    ui.print(
+        f"Open {ui.c(str(report_path), 'bold')} in your browser to see the 2D map."
+    )
 
 
 def cmd_visual(state: ShellState, rest: list[str]) -> None:

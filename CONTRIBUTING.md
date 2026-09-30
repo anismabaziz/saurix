@@ -45,6 +45,8 @@ That refreshes `demo-mcp.md` and `docs/agent-lifecycle.md`. Commit the result wi
 
 The accuracy report (`docs/accuracy.md`) is different. It clones a foreign repo and traces its test suite, which is too slow for a pre-push check. Do not regenerate it unless you changed call edge inference. If you did, run `uv run scripts/accuracy.py` and mention the before and after numbers in the PR.
 
+The demo assets (`docs/assets/`) come from a third generator, `uv run scripts/capture_demo.py`. It needs a Chromium build, which `uv run playwright install chromium` fetches once, so do that before the first run rather than discovering it missing. Nothing in CI checks whether the captures match the current code: the counts in them move with the code, and regenerating is a deliberate act. Do it when the CLI output, the dashboard, or the tool responses change enough that the pictures would mislead.
+
 ## What review looks like
 
 I review every PR myself. Here is what I actually check:

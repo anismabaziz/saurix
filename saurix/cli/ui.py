@@ -44,9 +44,11 @@ class UI:
         return f"[{style}]{text}[/]"
 
     def prompt(self, graph_name: str) -> str:
+        # The brackets are escaped: unescaped, the markup parser reads the name
+        # as a style and swallows the whole thing.
         parts = [
             self.c("saurix", "bold cyan"),
-            self.c(f"[{graph_name}]", "dim"),
+            self.c(rf"\[{graph_name}]", "dim"),
             self.c(" > ", "bold"),
         ]
         return "".join(parts)
