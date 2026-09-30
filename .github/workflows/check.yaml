@@ -12,7 +12,7 @@ jobs:
     name: Lint, format, typecheck, and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # test_docs.py checks that the commit named in the generated MCP docs
           # exists in this repository. The default depth-1 clone cannot see it.
