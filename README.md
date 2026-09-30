@@ -1,81 +1,87 @@
 # Saurix
 
+Joining an unfamiliar repo and working out what a change breaks means opening file after file. Saurix indexes the repo into a knowledge graph you can query, so the answer comes from one lookup instead of fifty file reads.
+
+It plugs into Claude Desktop, Cursor, and OpenCode through the Model Context Protocol. `saurix-mcp` serves the graph and your agent asks the questions.
+
 [![PyPI version](https://img.shields.io/pypi/v/saurix.svg)](https://pypi.org/project/saurix/)
 [![Python versions](https://img.shields.io/pypi/pyversions/saurix.svg)](https://pypi.org/project/saurix/)
 [![License: MIT](https://img.shields.io/pypi/l/saurix.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/pypi/dm/saurix.svg)](https://pypi.org/project/saurix/)
 
-Saurix is an interactive knowledge graph engine that transforms complex codebases into a queryable, 2D-visualizable map. It is designed to be the **Symbolic Intelligence Layer** for modern AI coding agents.
+## See it run
 
-## Why Saurix for AI Agents?
+![Terminal recording of Saurix indexing a repo, then running stats, find, and impact](docs/assets/saurix-demo.gif)
 
-Saurix solves the "Context Window" problem for LLMs by providing a structured representation of code that is superior to keyword search:
+| CLI | Dashboard | Agent tools |
+| --- | --- | --- |
+| ![CLI session: index, stats, find, impact](docs/assets/cli-workflow.png) | ![Generated dashboard with the 2D graph view](docs/assets/visual-workflow.png) | ![Agent calling index_repo, find_symbol, path_between, impact_of_symbol](docs/assets/mcp-workflow.png) |
 
-- **Structural Awareness**: Understands `CALLS`, `INHERITS`, and `IMPORTS` relationships rather than just raw text.
-- **Context Efficiency**: Agents can query specific subgraphs, receiving only the architectural context they need, drastically reducing token usage.
-- **Blast Radius Analysis**: Built-in `impact` analysis allows agents to calculate the transitive side effects of a proposed change before making it.
-- **Native MCP Support**: Built on the **Model Context Protocol**, allowing AI agents to treat the repository graph as an extension of their own memory.
+One number to hold or doubt: on `pallets/click` at `874ca2bc`, 7.35% of the calls its own test suite actually made were edges Saurix had inferred. That is precision on observed calls, not recall, and every miss is listed in the open. Method, limits, and the second figure from a hand-labeled sample: [docs/accuracy.md](docs/accuracy.md).
 
-See [docs/agent-lifecycle.md](docs/agent-lifecycle.md) for a step-by-step walkthrough of how an AI agent uses these capabilities.
-
----
-
-## 1) Core Mission
-
-- **Knowledge Extraction**: Turn local or GitHub repositories into a structured graph of symbols and relationships.
-- **Agent Infrastructure**: Expose high-level tools (MCP) for autonomous agents to navigate complex architectures.
-- **Fast Navigation**: Answer questions about dependencies, callers, and impact analysis in milliseconds.
-- **Modular Architecture**: Built for extensibility across languages and tools.
+To see the whole loop an agent follows, read [docs/agent-lifecycle.md](docs/agent-lifecycle.md). Every call there ran against a real repo. For why the project exists and where it falls short, read [docs/why-saurix.md](docs/why-saurix.md).
 
 ---
 
-## 2) Architecture
+## 1. What it does
 
-Saurix follows a clean, domain-driven modular structure designed for scale and symbolic intelligence. For a detailed breakdown of how Saurix indexes, stores, and queries code, see [docs/architecture.md](docs/architecture.md).
+- **Indexing** turns a local path or a GitHub URL into a Graph of Symbols and Edges. Four Extractors (Python, TypeScript, Go, Java) all parse through tree-sitter.
+- **Queries** answer structural questions without reading every file. Find where a Symbol is defined, who calls it, what it reaches, how two Symbols connect, and what a change would touch.
+- **Impact** is the reverse reachable set from a Symbol through CALLS and CONTAINS edges. It reads as a blast radius: the files and functions to re-read after an edit.
+- **MCP tools** expose all of it to agents, with one response shape everywhere. See section 5.
 
 ---
 
-## Setup & Installation
+## 2. Architecture
 
-1. **Install Saurix**:
-   ```bash
-   pip install saurix
-   ```
-2. **Initialize Any Project**:
-   ```bash
-   cd /path/to/your/project
-   saurix init
-   ```
-   *This command indexes your project, creates a local 2D dashboard (`saurix.html`), and generates your MCP config in one step.*
+Indexing takes the checkout, sends each file to its language Extractor, and merges the results into a Graph persisted as JSON. Queries, Impact analysis, and the 2D dashboard all read that Graph. Full breakdown: [docs/architecture.md](docs/architecture.md).
 
-### Running the MCP Server
+---
 
-Expose graph tools to AI agents (e.g., Claude Desktop, Cursor):
+## 3. Setup
+
+From PyPI:
+
+```bash
+pip install saurix
+cd /path/to/your/project
+saurix init
+```
+
+`init` indexes the project, writes the Graph to `saurix.graph.json`, generates the dashboard as `saurix.html`, and prints the MCP config for your client. From a source checkout, run `uv sync` first and prefix the commands with `uv run`.
+
+To serve the Graph to an agent (Claude Desktop, Cursor, OpenCode):
 
 ```bash
 saurix-mcp
 ```
 
+The client starts and stops the server on its own. No manual terminal work needed beyond the config `init` printed.
+
 ---
 
-## 4) Interactive Commands
+## 4. Commands
+
+Inside `saurix`, or as one-shots (`saurix index .`, `saurix stats`):
 
 | Command          | Description                                           |
 | ---------------- | ----------------------------------------------------- |
 | `init`           | Zero-config setup for the current project             |
 | `index <source>` | Index a local path or GitHub URL                      |
 | `stats`          | Show graph statistics and extraction coverage         |
-| `find <query>`   | Fuzzy search symbols by name or ID                    |
+| `find <query>`   | Query Symbols by name or id                           |
 | `callers <sym>`  | List symbols calling the target                       |
+| `callees <sym>`  | List symbols the target calls                         |
 | `path <A> <B>`   | Find shortest directed path between two symbols       |
 | `impact <sym>`   | Estimate blast radius of a change                     |
+| `related <file>` | List files neighbouring one file                      |
 | `visual`         | Generate a 2D knowledge graph visualization           |
 
 ---
 
-## 5) AI Agent Integration (MCP)
+## 5. Agent tools (MCP)
 
-Saurix is optimized for agentic workflows. The server exposes eight tools:
+The server exposes eight tools:
 
 | Tool               | Arguments                                | Returns                                       |
 | ------------------ | ---------------------------------------- | --------------------------------------------- |
@@ -88,11 +94,11 @@ Saurix is optimized for agentic workflows. The server exposes eight tools:
 | `impact_of_symbol` | `graph`, `symbol`, `depth`, `limit`      | The reverse neighbourhood of a change         |
 | `related_files`    | `graph`, `file`, `depth`, `limit`        | Neighbour files of one file path              |
 
-They help agents answer three kinds of question:
+They answer three kinds of question:
 
-1. **Context Discovery**: `find_symbol` and `related_files`.
-2. **Behavioral Mapping**: `callers`, `callees`, and `path_between`.
-3. **Risk Assessment**: `impact_of_symbol`.
+1. **Context discovery**: `find_symbol` and `related_files`.
+2. **Behavioral mapping**: `callers`, `callees`, and `path_between`.
+3. **Risk assessment**: `impact_of_symbol`.
 
 Every tool answers with the same envelope: `ok`, then either `data` or an
 `error` of `code` and `message` (never both), then `meta` with the
@@ -117,25 +123,27 @@ and a query that fails underneath a tool it had already accepted reports
 `STATS_FAILED`, `FIND_FAILED`, `CALLERS_FAILED`, `CALLEES_FAILED`,
 `PATH_FAILED`, `IMPACT_FAILED`, or `RELATED_FAILED`.
 
-A search that matches nothing is not one of these: `find_symbol` returns an
+A Query that matches nothing is not one of these: `find_symbol` returns an
 empty list, and so does a `path_between` whose two ends the graph holds but
 does not connect. A tool asked about a *specific* symbol is stricter, and
-reports `SYMBOL_NOT_FOUND` rather than guessing which one was meant — pass an id
+reports `SYMBOL_NOT_FOUND` rather than guessing which one was meant. Pass an id
 from `find_symbol` if a name is not enough.
 
-Configure your agent with the `saurix-mcp` entry point. Once configured, the AI client (e.g., Claude Desktop) will automatically manage the server lifecycle—starting it in the background when needed and stopping it when the app closes. No manual terminal execution is required.
+A runnable copy of every call, with real responses, lives in
+[demo-mcp.md](demo-mcp.md). It is generated from a live server run, so copy
+any of it and it works.
 
 ---
 
-## 6) Development
+## 6. Development
 
-### Running Tests
+### Running tests
 
 ```bash
 uv run pytest
 ```
 
-### Regenerating the Documentation
+### Regenerating the documentation
 
 The tool-call demo ([demo-mcp.md](demo-mcp.md)) and the agent walkthrough
 ([docs/agent-lifecycle.md](docs/agent-lifecycle.md)) are generated from a real
@@ -151,7 +159,7 @@ generator on every test run and fails when the committed documents no longer
 match the current code, or when any document names a module or file path that
 no longer exists.
 
-### Checking Call Edge Accuracy
+### Checking call edge accuracy
 
 How accurate the inferred call edges are is measured, not asserted. The
 accuracy report ([docs/accuracy.md](docs/accuracy.md)) pins a target repository
@@ -168,7 +176,7 @@ It is a published snapshot, not a CI gate: it clones a foreign repository and
 builds an environment for it, which is too slow and fragile to run on every
 push. The report says so, and says what it would take to change that.
 
-### Testing the MCP Server
+### Testing the MCP server
 
 You can test the MCP integration without a full IDE using the **MCP Inspector**:
 
