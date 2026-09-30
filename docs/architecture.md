@@ -51,7 +51,7 @@ flowchart TD
 The core layer is responsible for the lifecycle of the knowledge graph.
 
 - **Indexing Engine**: Coordinates the extraction process. It takes a project root, identifies relevant files using ignore-aware walkers, and passes them to the appropriate extractors.
-- **Graph Store**: An in-memory property graph. It stores "Symbols" (functions, classes, variables) as nodes and "Relationships" (`CALLS`, `INHERITS`, `DEFINES`) as edges.
+- **Graph Store**: An in-memory property graph. It stores Symbols (functions, classes, variables) and the Edges between them (`CALLS`, `INHERITS`, `IMPORTS`, `CONTAINS`).
 - **Persistence Layer**: Serializes the graph into a compressed JSON format (`saurix.graph.json`) for fast loading in subsequent sessions.
 
 ## 2. Static Analysis (`saurix.analysis`)
@@ -64,7 +64,7 @@ This layer performs the heavy lifting of understanding code without executing it
     - **TypeScript/JavaScript**: Resolves module exports and complex call chains.
     - **Go**: Extracts modules, functions, imports, and call relationships.
     - **Java**: Extracts classes, methods, imports, and call relationships.
-- **Relationship Resolution**: After initial extraction, a "linker" pass resolves string-based references (e.g., a function call) into direct edges between graph nodes.
+- **Relationship Resolution**: After initial extraction, a "linker" pass resolves string-based references (e.g., a function call) into direct Edges between Symbols.
 
 ## 3. Graph Intelligence (`saurix.discovery`)
 

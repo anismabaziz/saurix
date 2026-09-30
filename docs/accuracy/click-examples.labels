@@ -1,0 +1,109 @@
+# The hand-labeled sample behind the second figure in ../accuracy.md.
+#
+# pallets/click at 874ca2bc1c30d93a4ac6e36a15ed685eafe89097 ships nine example
+# programs under `examples/`. Its own test suite never imports any of them, so
+# nothing there is ever observed at runtime. These five were read by hand and
+# every call written down, so the region has ground truth of a different kind
+# from a trace: somebody looking at the source rather than a running process.
+#
+# Method, stated so it can be disagreed with:
+#
+#   * One line per call, written down by reading the file. Nothing was taken
+#     from the graph, and the file was not re-read after the graph was built.
+#   * A line is `<file>:<qualified name> -> <callee>`, the way the graph names
+#     both ends. The callee is the expression that is called, with an import
+#     resolved to the module it came from: `from urllib import parse as
+#     urlparse` is labeled `urllib.parse.urlparse`, because that is what the
+#     call reaches.
+#   * A decorator is labeled as a call from the function it decorates. It runs
+#     at import time rather than when the function is called, so a reader could
+#     reasonably put it at module scope instead; the convention is the graph's,
+#     and it is called out here because it is the one choice in this file that
+#     could move the figure.
+#   * A call at module scope is labeled from the module itself, as in
+#     `completion.py:completion -> cli.add_command`.
+#   * A call is labeled whether or not its name can be resolved. `f.read` and
+#     `self.fail` are calls to something, and refusing to name a callee would
+#     quietly measure the pipeline's resolver rather than its inference.
+#   * The same call at two call sites is one edge, written once.
+#
+# What is deliberately not here: the eight one-line `setup.py` files, which
+# contain no calls, and the four larger examples, which are not small enough to
+# label exhaustively and honestly without more time than this is worth. The
+# sample is a sample, and its size is stated in the report rather than implied.
+#
+# What this sample cannot show, stated here so it is not a surprise in the
+# report: every call in these files goes to something the repository does not
+# define, `click.echo` and `os.listdir` among them. The pipeline writes down
+# the name it read in the source and stops, so the figure it produces measures
+# whether the calls were found, not whether their targets were resolved. The
+# trace figure in the report is the one that exercises resolution, because a
+# call that really happened has a real callee to match against.
+
+# examples/colors/colors.py
+examples/colors/colors.py:cli -> click.command
+examples/colors/colors.py:cli -> click.echo
+examples/colors/colors.py:cli -> click.style
+
+# examples/completion/completion.py
+examples/completion/completion.py:cli -> click.group
+examples/completion/completion.py:ls -> cli.command
+examples/completion/completion.py:ls -> click.option
+examples/completion/completion.py:ls -> click.Path
+examples/completion/completion.py:ls -> click.echo
+examples/completion/completion.py:ls -> join
+examples/completion/completion.py:ls -> os.listdir
+examples/completion/completion.py:show_env -> cli.command
+examples/completion/completion.py:show_env -> click.argument
+examples/completion/completion.py:show_env -> click.echo
+examples/completion/completion.py:group -> cli.group
+examples/completion/completion.py:list_users -> out.append
+examples/completion/completion.py:list_users -> click.shell_completion.CompletionItem
+examples/completion/completion.py:select_user -> group.command
+examples/completion/completion.py:select_user -> click.argument
+examples/completion/completion.py:select_user -> click.echo
+examples/completion/completion.py:completion -> cli.add_command
+
+# examples/inout/inout.py
+examples/inout/inout.py:cli -> click.command
+examples/inout/inout.py:cli -> click.argument
+examples/inout/inout.py:cli -> click.File
+examples/inout/inout.py:cli -> f.read
+examples/inout/inout.py:cli -> output.write
+examples/inout/inout.py:cli -> output.flush
+
+# examples/naval/naval.py
+examples/naval/naval.py:cli -> click.group
+examples/naval/naval.py:cli -> click.version_option
+examples/naval/naval.py:ship -> cli.group
+examples/naval/naval.py:ship_new -> ship.command
+examples/naval/naval.py:ship_new -> click.argument
+examples/naval/naval.py:ship_new -> click.echo
+examples/naval/naval.py:ship_move -> ship.command
+examples/naval/naval.py:ship_move -> click.argument
+examples/naval/naval.py:ship_move -> click.option
+examples/naval/naval.py:ship_move -> click.echo
+examples/naval/naval.py:ship_shoot -> ship.command
+examples/naval/naval.py:ship_shoot -> click.argument
+examples/naval/naval.py:ship_shoot -> click.echo
+examples/naval/naval.py:mine -> cli.group
+examples/naval/naval.py:mine_set -> mine.command
+examples/naval/naval.py:mine_set -> click.argument
+examples/naval/naval.py:mine_set -> click.option
+examples/naval/naval.py:mine_set -> click.echo
+examples/naval/naval.py:mine_remove -> mine.command
+examples/naval/naval.py:mine_remove -> click.argument
+examples/naval/naval.py:mine_remove -> click.echo
+
+# examples/validation/validation.py
+examples/validation/validation.py:validate_count -> click.BadParameter
+examples/validation/validation.py:URL -> click.ParamType
+examples/validation/validation.py:URL.convert -> isinstance
+examples/validation/validation.py:URL.convert -> urllib.parse.urlparse
+examples/validation/validation.py:URL.convert -> self.fail
+examples/validation/validation.py:cli -> click.command
+examples/validation/validation.py:cli -> click.option
+examples/validation/validation.py:cli -> click.version_option
+examples/validation/validation.py:cli -> validation.URL
+examples/validation/validation.py:cli -> click.BadParameter
+examples/validation/validation.py:cli -> click.echo

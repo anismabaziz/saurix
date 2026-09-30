@@ -14,7 +14,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..core.config import config
-from ..core.graph import GraphStore
 from .commands import (
     ShellState,
     cmd_callees,
@@ -29,6 +28,7 @@ from .commands import (
     cmd_stats,
     cmd_visual,
     cmd_where,
+    read_graph,
 )
 from .ui import ASCII_LOGO, UI, clear_screen, interactive_help
 
@@ -43,7 +43,7 @@ def create_state(graph_path: Path, ui: UI) -> ShellState:
     return ShellState(
         ui=ui,
         graph_path=graph_path,
-        loaded_graph=GraphStore.from_json(graph_path) if graph_path.exists() else None,
+        loaded_graph=read_graph(graph_path, ui) if graph_path.exists() else None,
     )
 
 

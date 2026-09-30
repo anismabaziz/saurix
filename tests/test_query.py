@@ -5,7 +5,7 @@ Tests for query operations.
 from __future__ import annotations
 
 from saurix.core.graph import GraphStore
-from saurix.core.models import Edge, Node
+from saurix.core.models import Edge, Symbol
 from saurix.discovery import (
     callers_of,
     find_symbol,
@@ -275,8 +275,8 @@ class TestTraversalEdgeCases:
         graph = GraphStore()
 
         # Create circular call: a -> b -> c -> a
-        nodes = [
-            Node(
+        symbols = [
+            Symbol(
                 id="a",
                 type="function",
                 language="python",
@@ -284,7 +284,7 @@ class TestTraversalEdgeCases:
                 file="test.py",
                 line=1,
             ),
-            Node(
+            Symbol(
                 id="b",
                 type="function",
                 language="python",
@@ -292,7 +292,7 @@ class TestTraversalEdgeCases:
                 file="test.py",
                 line=2,
             ),
-            Node(
+            Symbol(
                 id="c",
                 type="function",
                 language="python",
@@ -301,8 +301,8 @@ class TestTraversalEdgeCases:
                 line=3,
             ),
         ]
-        for n in nodes:
-            graph.add_node(n)
+        for symbol in symbols:
+            graph.add_symbol(symbol)
 
         edges = [
             Edge(

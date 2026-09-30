@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from rich.console import Console
 from rich.json import JSON
@@ -44,9 +44,11 @@ class UI:
         return f"[{style}]{text}[/]"
 
     def prompt(self, graph_name: str) -> str:
+        # The brackets are escaped: unescaped, the markup parser reads the name
+        # as a style and swallows the whole thing.
         parts = [
             self.c("saurix", "bold cyan"),
-            self.c(f"[{graph_name}]", "dim"),
+            self.c(rf"\[{graph_name}]", "dim"),
             self.c(" > ", "bold"),
         ]
         return "".join(parts)
@@ -164,7 +166,7 @@ def interactive_help() -> str:
 
 
 def render_stats_panel(stats: dict[str, object], ui: UI) -> None:
-    title = f"Nodes: {stats.get('nodes', 0)} | Edges: {stats.get('edges', 0)}"
+    title = f"Symbols: {stats.get('symbols', 0)} | Edges: {stats.get('edges', 0)}"
     ui.print(Panel.fit(title, title="Graph Stats", border_style="cyan"))
     _render_unified_stats_table(stats, ui)
 
@@ -182,7 +184,7 @@ def _render_unified_stats_table(stats: dict[str, object], ui: UI) -> None:
     _append_coverage_rows(
         table, "Extraction Coverage", stats.get("extraction_coverage", {})
     )
-    _append_dict_rows(table, "Node Types", stats.get("node_types", {}))
+    _append_dict_rows(table, "Symbol Types", stats.get("symbol_types", {}))
     _append_dict_rows(table, "Edge Types", stats.get("edge_types", {}))
     _append_dict_rows(table, "Languages", stats.get("languages", {}))
 
@@ -216,9 +218,6 @@ def _append_coverage_rows(table: Table, section: str, data: object) -> None:
         table.add_row(
             section, f"{lang}.coverage_percent", f"{row.get('coverage_percent', 0.0)}%"
         )
-        table.add_row(
-            section, f"{lang}.parser_mode", str(row.get("parser_mode", "unknown"))
-        )
 
 
 def render_index_summary(summary: dict[str, object], ui: UI) -> None:
@@ -232,7 +231,9 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
         "excluded_dirs",
         "scanned_files",
         "indexed_files",
-        "nodes",
+        "reused_files",
+        "reextracted_files",
+        "symbols",
         "edges",
     ]:
         if key in summary:
@@ -249,7 +250,9 @@ def render_table(
         return
     table = Table(title=title, header_style="bold cyan")
     for key, label in columns:
-        justify = "right" if key in {"line", "distance", "step"} else "left"
+        justify: Literal["default", "left", "center", "right", "full"] = (
+            "right" if key in {"line", "distance", "step"} else "left"
+        )
         table.add_column(label, justify=justify)
     for row in rows:
         table.add_row(*[_truncate(str(row.get(key, "")), 90) for key, _ in columns])

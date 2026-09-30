@@ -23,14 +23,14 @@ def find_symbol(
     q = needle.lower()
     rows: list[dict[str, str]] = []
 
-    for node in graph.nodes.values():
-        if q in node.name.lower() or q in node.id.lower():
+    for symbol in graph.symbols.values():
+        if q in symbol.name.lower() or q in symbol.id.lower():
             rows.append(
                 {
-                    "id": node.id,
-                    "type": node.type,
-                    "name": node.name,
-                    "file": node.file or "",
+                    "id": symbol.id,
+                    "type": symbol.type,
+                    "name": symbol.name,
+                    "file": symbol.file or "",
                 }
             )
 
@@ -38,26 +38,37 @@ def find_symbol(
     return rows[:limit]
 
 
-def _resolve_exact_ids(graph: GraphStore, symbol: str) -> list[str]:
+def exact_symbol_ids(graph: GraphStore, symbol: str) -> list[str]:
     """
-    Shared exact resolution: exact id, then exact name via index. No fuzzy fallback.
+    Resolve a symbol to ids without falling back to a fuzzy match: exact id first,
+    then exact name through the name index.
+
+    An empty result means the graph holds no such symbol, which is a different
+    answer from a symbol that simply has no callers.
     """
-    if symbol in graph.nodes:
+    if symbol in graph.symbols:
         return [symbol]
-    exact = [node.id for node in graph.get_nodes_by_name(symbol)]
-    return exact
+    return [found.id for found in graph.get_symbols_by_name(symbol)]
+
+
+def file_symbol_ids(graph: GraphStore, file_path: str) -> list[str]:
+    """
+    Return the ids of the symbols a file holds, empty when the graph has no such
+    file.
+    """
+    return [symbol.id for symbol in graph.symbols.values() if symbol.file == file_path]
 
 
 def resolve_symbol_ids(graph: GraphStore, symbol: str, limit: int = 25) -> list[str]:
     """
-    Resolves a user-provided symbol name or ID to a list of matching graph node IDs.
+    Resolves a user-provided symbol name or ID to a list of matching symbol IDs.
 
     Resolution order:
     1. Exact ID match.
     2. Exact name match via indexed lookup.
     3. Fuzzy substring match.
     """
-    exact = _resolve_exact_ids(graph, symbol)
+    exact = exact_symbol_ids(graph, symbol)
     if exact:
         return exact[:limit]
 
@@ -71,14 +82,14 @@ def callers_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     traversal queries.
     """
     # Use exact resolution only to preserve pre-collapse semantics (no fuzzy callers)
-    exact_ids = _resolve_exact_ids(graph, symbol)
+    exact_ids = exact_symbol_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
 
     rows: list[dict[str, str]] = []
     for edge in graph.edges:
         if edge.type != "CALLS" or edge.target not in target_ids:
             continue
-        source = graph.nodes.get(edge.source)
+        source = graph.symbols.get(edge.source)
         rows.append(
             {
                 "caller": edge.source,
@@ -96,14 +107,14 @@ def callees_of(graph: GraphStore, symbol: str, limit: int = 50) -> list[dict[str
     """
     List CALLS edges outgoing from `symbol`, sharing exact resolution.
     """
-    exact_ids = _resolve_exact_ids(graph, symbol)
+    exact_ids = exact_symbol_ids(graph, symbol)
     target_ids = set(exact_ids) if exact_ids else {symbol}
 
     rows: list[dict[str, str]] = []
     for edge in graph.edges:
         if edge.type != "CALLS" or edge.source not in target_ids:
             continue
-        target = graph.nodes.get(edge.target)
+        target = graph.symbols.get(edge.target)
         rows.append(
             {
                 "callee": edge.target,
@@ -123,8 +134,8 @@ def related_files(
     """
     Find files related to `file_path` via undirected graph neighborhood.
     """
-    file_nodes = [n.id for n in graph.nodes.values() if n.file == file_path]
-    if not file_nodes:
+    file_symbols = file_symbol_ids(graph, file_path)
+    if not file_symbols:
         return []
 
     adjacency: dict[str, set[str]] = defaultdict(set)
@@ -132,13 +143,13 @@ def related_files(
         adjacency[edge.source].add(edge.target)
         adjacency[edge.target].add(edge.source)
 
-    visited = set(file_nodes)
-    frontier = set(file_nodes)
+    visited = set(file_symbols)
+    frontier = set(file_symbols)
 
     for _ in range(max(depth, 0)):
         next_frontier: set[str] = set()
-        for node_id in frontier:
-            for neigh in adjacency.get(node_id, set()):
+        for symbol_id in frontier:
+            for neigh in adjacency.get(symbol_id, set()):
                 if neigh not in visited:
                     visited.add(neigh)
                     next_frontier.add(neigh)
@@ -146,13 +157,12 @@ def related_files(
         if not frontier:
             break
 
-    files = sorted(
-        {
-            graph.nodes[node_id].file
-            for node_id in visited
-            if node_id in graph.nodes and graph.nodes[node_id].file
-        }
-    )
+    files_set: set[str] = set()
+    for symbol_id in visited:
+        sym = graph.symbols.get(symbol_id)
+        if sym is not None and sym.file:
+            files_set.add(sym.file)
+    files = sorted(files_set)
     return files[:limit]
 
 
@@ -183,46 +193,46 @@ def shortest_path(
 
     hit: str | None = None
     while queue:
-        node_id, depth = queue.popleft()
+        symbol_id, depth = queue.popleft()
 
-        if node_id in target_ids:
-            hit = node_id
+        if symbol_id in target_ids:
+            hit = symbol_id
             break
 
         if depth >= max_depth:
             continue
 
-        for edge in graph.get_edges_from(node_id):
+        for edge in graph.get_edges_from(symbol_id):
             if edge.type not in allowed:
                 continue
             nxt = edge.target
             if nxt in prev:
                 continue
-            prev[nxt] = (node_id, edge.type)
+            prev[nxt] = (symbol_id, edge.type)
             queue.append((nxt, depth + 1))
 
     if hit is None:
         return []
 
     chain: list[str] = []
-    cursor = hit
+    cursor: str | None = hit
     while cursor is not None:
         chain.append(cursor)
         cursor = prev[cursor][0]
     chain.reverse()
 
     result: list[dict[str, str]] = []
-    for idx, node_id in enumerate(chain):
-        node = graph.nodes.get(node_id)
-        edge_type = prev[node_id][1] if idx > 0 else ""
+    for idx, symbol_id in enumerate(chain):
+        found = graph.symbols.get(symbol_id)
+        edge_type = prev[symbol_id][1] if idx > 0 else ""
         result.append(
             {
                 "step": str(idx),
                 "edge": edge_type or "",
-                "id": node_id,
-                "type": node.type if node else "unknown",
-                "name": node.name if node else node_id,
-                "file": (node.file if node else "") or "",
+                "id": symbol_id,
+                "type": found.type if found else "unknown",
+                "name": found.name if found else symbol_id,
+                "file": (found.file if found else "") or "",
             }
         )
 
@@ -250,11 +260,11 @@ def impact_of(
     rows: list[dict[str, str]] = []
 
     while queue and len(rows) < limit:
-        node_id, d = queue.popleft()
+        symbol_id, d = queue.popleft()
         if d >= depth:
             continue
 
-        for edge in graph.get_edges_to(node_id):
+        for edge in graph.get_edges_to(symbol_id):
             if edge.type not in allowed:
                 continue
             parent = edge.source
@@ -263,15 +273,15 @@ def impact_of(
             visited.add(parent)
             queue.append((parent, d + 1))
 
-            node = graph.nodes.get(parent)
+            found = graph.symbols.get(parent)
             rows.append(
                 {
                     "distance": str(d + 1),
                     "via": edge.type,
                     "id": parent,
-                    "type": node.type if node else "unknown",
-                    "name": node.name if node else parent,
-                    "file": (node.file if node else "") or "",
+                    "type": found.type if found else "unknown",
+                    "name": found.name if found else parent,
+                    "file": (found.file if found else "") or "",
                 }
             )
             if len(rows) >= limit:
@@ -289,7 +299,7 @@ def neighborhood_subgraph(
     limit: int = 120,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
-    Extracts a local cluster of nodes and edges surrounding a symbol.
+    Extracts a local cluster of symbols and edges surrounding a symbol.
     """
     seeds = resolve_symbol_ids(graph, symbol)
     if not seeds:
@@ -299,11 +309,11 @@ def neighborhood_subgraph(
     frontier = set(seeds)
     for _ in range(max(depth, 0)):
         next_frontier: set[str] = set()
-        for node_id in frontier:
+        for symbol_id in frontier:
             neighbors = set()
-            for e in graph.get_edges_from(node_id):
+            for e in graph.get_edges_from(symbol_id):
                 neighbors.add(e.target)
-            for e in graph.get_edges_to(node_id):
+            for e in graph.get_edges_to(symbol_id):
                 neighbors.add(e.source)
 
             for neighbor in neighbors:
@@ -317,25 +327,25 @@ def neighborhood_subgraph(
         if not frontier or len(visited) >= limit:
             break
 
-    nodes: list[dict[str, Any]] = []
-    for node_id in sorted(visited):
-        node = graph.nodes.get(node_id)
-        if node is None:
+    rows: list[dict[str, Any]] = []
+    for symbol_id in sorted(visited):
+        found = graph.symbols.get(symbol_id)
+        if found is None:
             continue
-        nodes.append(
+        rows.append(
             {
-                "id": node.id,
-                "label": node.name,
-                "type": node.type,
-                "file": node.file or "",
-                "language": node.language,
+                "id": found.id,
+                "label": found.name,
+                "type": found.type,
+                "file": found.file or "",
+                "language": found.language,
             }
         )
 
     edges: list[dict[str, Any]] = []
     seen_edges = set()
-    for node_id in visited:
-        for edge in graph.get_edges_from(node_id):
+    for symbol_id in visited:
+        for edge in graph.get_edges_from(symbol_id):
             if edge.target in visited:
                 edge_key = (edge.source, edge.target, edge.type)
                 if edge_key not in seen_edges:
@@ -349,4 +359,4 @@ def neighborhood_subgraph(
                         }
                     )
 
-    return nodes, edges
+    return rows, edges

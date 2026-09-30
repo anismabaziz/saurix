@@ -10,7 +10,12 @@ from pathlib import Path
 import pytest
 
 from saurix.core.graph import GraphStore
-from saurix.core.models import Edge, Node
+from saurix.core.models import Edge, Symbol
+
+# `tests/fixtures` holds repositories the harness measures. Their own test files
+# are fixtures, not tests of this project, and collecting them would run a
+# stranger's suite inside our suite.
+collect_ignore_glob = ["fixtures/*"]
 
 
 @pytest.fixture
@@ -24,13 +29,13 @@ def empty_graph() -> GraphStore:
 @pytest.fixture
 def sample_graph() -> GraphStore:
     """
-    Return a populated graph with sample nodes and edges.
+    Return a populated graph with sample symbols and edges.
     """
     graph = GraphStore()
 
-    # Add nodes
-    nodes = [
-        Node(
+    # Add symbols
+    symbols = [
+        Symbol(
             id="python://module1",
             type="module",
             language="python",
@@ -38,7 +43,7 @@ def sample_graph() -> GraphStore:
             file="module1.py",
             line=1,
         ),
-        Node(
+        Symbol(
             id="python://module1:func1",
             type="function",
             language="python",
@@ -46,7 +51,7 @@ def sample_graph() -> GraphStore:
             file="module1.py",
             line=5,
         ),
-        Node(
+        Symbol(
             id="python://module1:func2",
             type="function",
             language="python",
@@ -54,7 +59,7 @@ def sample_graph() -> GraphStore:
             file="module1.py",
             line=15,
         ),
-        Node(
+        Symbol(
             id="python://module2",
             type="module",
             language="python",
@@ -62,7 +67,7 @@ def sample_graph() -> GraphStore:
             file="module2.py",
             line=1,
         ),
-        Node(
+        Symbol(
             id="python://module2:Class1",
             type="class",
             language="python",
@@ -70,7 +75,7 @@ def sample_graph() -> GraphStore:
             file="module2.py",
             line=3,
         ),
-        Node(
+        Symbol(
             id="python://module2:Class1.method1",
             type="method",
             language="python",
@@ -80,8 +85,8 @@ def sample_graph() -> GraphStore:
         ),
     ]
 
-    for node in nodes:
-        graph.add_node(node)
+    for symbol in symbols:
+        graph.add_symbol(symbol)
 
     # Add edges
     edges = [

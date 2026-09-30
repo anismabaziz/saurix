@@ -85,13 +85,19 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         return
 
     state.ui.success("Index completed")
+    state.ui.info(
+        f"Reused {result.reused_files} of {result.scanned_files} files "
+        f"({result.reextracted_files} re-extracted)"
+    )
     summary: dict[str, object] = {
         "source": source,
         "resolved": str(repo_path),
         "output": str(state.graph_path),
         "scanned_files": result.scanned_files,
         "indexed_files": result.indexed_files,
-        "nodes": stats.get("nodes", 0) if isinstance(stats, dict) else 0,
+        "reused_files": result.reused_files,
+        "reextracted_files": result.reextracted_files,
+        "symbols": stats.get("symbols", 0) if isinstance(stats, dict) else 0,
         "edges": stats.get("edges", 0) if isinstance(stats, dict) else 0,
     }
     if excludes:
@@ -107,9 +113,26 @@ def cmd_load(state: ShellState, rest: list[str]) -> None:
     if not candidate.exists():
         state.ui.error(f"Graph file not found: {candidate}")
         return
-    state.loaded_graph = GraphStore.from_json(candidate)
+    loaded = read_graph(candidate, state.ui)
+    if loaded is None:
+        return
+    state.loaded_graph = loaded
     state.graph_path = candidate
     state.ui.success(f"Loaded graph: {state.graph_path}")
+
+
+def read_graph(path: Path, ui: UI) -> GraphStore | None:
+    """
+    Read a graph file, reporting what is wrong with it instead of raising.
+
+    A graph written by an older Saurix is a normal thing to find on disk, not a
+    reason to hand the user a traceback.
+    """
+    try:
+        return GraphStore.from_json(path)
+    except (OSError, ValueError, TypeError) as exc:
+        ui.error(f"Could not read {path}: {exc}")
+        return None
 
 
 def cmd_stats(state: ShellState) -> None:
@@ -118,6 +141,7 @@ def cmd_stats(state: ShellState) -> None:
     """
     if not _ensure_graph(state):
         return
+    assert state.loaded_graph is not None
     stats = state.loaded_graph.stats()
     print_json(stats, state.ui) if state.raw_mode else render_stats_panel(
         stats, state.ui
@@ -135,6 +159,7 @@ def cmd_find(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: find <name> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = find_symbol(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Find Results",
@@ -155,6 +180,7 @@ def cmd_callers(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: callers <symbol> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = callers_of(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Callers",
@@ -180,6 +206,7 @@ def cmd_callees(state: ShellState, rest: list[str]) -> None:
     if limit is None:
         state.ui.warn("Usage: callees <symbol> [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = callees_of(state.loaded_graph, rest[0], limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Callees",
@@ -208,6 +235,7 @@ def cmd_related(state: ShellState, rest: list[str]) -> None:
     if depth is None or limit is None:
         state.ui.warn("Usage: related <file> [--depth N] [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = [
         {"file": p}
         for p in related_files(state.loaded_graph, rest[0], depth=depth, limit=limit)
@@ -230,6 +258,7 @@ def cmd_path(state: ShellState, rest: list[str]) -> None:
     if max_depth is None:
         state.ui.warn("Usage: path <from> <to> [--max-depth N]")
         return
+    assert state.loaded_graph is not None
     rows = shortest_path(state.loaded_graph, rest[0], rest[1], max_depth=max_depth)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Path",
@@ -259,6 +288,7 @@ def cmd_impact(state: ShellState, rest: list[str]) -> None:
     if depth is None or limit is None:
         state.ui.warn("Usage: impact <symbol> [--depth N] [--limit N]")
         return
+    assert state.loaded_graph is not None
     rows = impact_of(state.loaded_graph, rest[0], depth=depth, limit=limit)
     print_json(rows, state.ui) if state.raw_mode else render_table(
         "Blast Radius",
@@ -332,7 +362,9 @@ def cmd_init(state: ShellState) -> None:
     ui.print("  Type: command")
     ui.print(f"  Command: uv --directory {cwd} run saurix-mcp")
     ui.print()
-    ui.info(f"Open [bold]{report_path}[/] in your browser to see the 2D map.")
+    ui.print(
+        f"Open {ui.c(str(report_path), 'bold')} in your browser to see the 2D map."
+    )
 
 
 def cmd_visual(state: ShellState, rest: list[str]) -> None:

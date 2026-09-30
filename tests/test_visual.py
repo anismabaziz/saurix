@@ -2,7 +2,7 @@
 
 Confirms the visualization simplification: the output HTML loads only the 2D
 renderer with no 3D library, no mode switch, and no 3D init path, while still
-embedding the graph nodes and links.
+embedding the graph symbols and links.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from saurix.core.graph import GraphStore
-from saurix.core.models import Edge, Node
+from saurix.core.models import Edge, Symbol
 from saurix.discovery.visual import generate_visualization
 
 
@@ -19,8 +19,8 @@ def _mini_graph() -> GraphStore:
     Return a tiny graph with a function calling another.
     """
     graph = GraphStore()
-    graph.add_node(
-        Node(
+    graph.add_symbol(
+        Symbol(
             id="python://a",
             type="function",
             language="python",
@@ -29,8 +29,8 @@ def _mini_graph() -> GraphStore:
             line=1,
         )
     )
-    graph.add_node(
-        Node(
+    graph.add_symbol(
+        Symbol(
             id="python://b",
             type="function",
             language="python",
@@ -58,14 +58,15 @@ class TestVisualization2DOnly:
     The generated dashboard is 2D-only and still carries the graph data.
     """
 
-    def test_writes_dashboard_with_nodes_and_links(self, tmp_path: Path) -> None:
+    def test_writes_dashboard_with_symbols_and_links(self, tmp_path: Path) -> None:
         """
-        The output HTML embeds the graph's nodes and links.
+        The output HTML embeds the graph under the keys force-graph reads.
         """
         out = tmp_path / "viz.html"
         generate_visualization(_mini_graph(), out)
 
         html = out.read_text(encoding="utf-8")
+        # force-graph is handed a `nodes` key, whatever this project calls them
         assert '"nodes"' in html
         assert '"links"' in html
         assert '"name": "alpha"' in html

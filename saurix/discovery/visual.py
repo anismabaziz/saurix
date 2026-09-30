@@ -41,24 +41,24 @@ def generate_visualization(
     """
     Constructs a 2D HTML dashboard with search and filtering.
     """
-    nodes = []
-    node_ids = set()
+    symbols = []
+    symbol_ids = set()
 
-    all_nodes = sorted(graph.nodes.values(), key=lambda n: (n.type, n.id))[:limit]
-    for node in all_nodes:
-        nodes.append(
+    all_symbols = sorted(graph.symbols.values(), key=lambda s: (s.type, s.id))[:limit]
+    for symbol in all_symbols:
+        symbols.append(
             {
-                "id": node.id,
-                "name": node.name,
-                "type": node.type,
-                "file": node.file,
+                "id": symbol.id,
+                "name": symbol.name,
+                "type": symbol.type,
+                "file": symbol.file,
             }
         )
-        node_ids.add(node.id)
+        symbol_ids.add(symbol.id)
 
     links = []
     for edge in graph.edges:
-        if edge.source in node_ids and edge.target in node_ids:
+        if edge.source in symbol_ids and edge.target in symbol_ids:
             links.append(
                 {
                     "source": edge.source,
@@ -67,12 +67,14 @@ def generate_visualization(
                 }
             )
 
-    graph_data = json.dumps({"nodes": nodes, "links": links})
+    # force-graph reads `nodes` and `links` from the object it is handed, so those
+    # two keys are the library's contract rather than this project's vocabulary.
+    graph_data = json.dumps({"nodes": symbols, "links": links})
     template = _load_template()
     html_content = template.replace("__GRAPH_DATA__", graph_data)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html_content, encoding="utf-8")
 
-    logger.info(f"Generated visualization at {out_path} ({len(nodes)} nodes)")
+    logger.info(f"Generated visualization at {out_path} ({len(symbols)} symbols)")
     return out_path

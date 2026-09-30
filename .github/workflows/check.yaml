@@ -4,13 +4,19 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
 
 jobs:
   style-and-test:
-    name: Lint, format, and test
+    name: Lint, format, typecheck, and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # test_docs.py checks that the commit named in the generated MCP docs
+          # exists in this repository. The default depth-1 clone cannot see it.
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -26,5 +32,14 @@ jobs:
       - name: Format check
         run: uv run ruff format . --check
 
-      - name: Test
-        run: uv run pytest -q
+      - name: Typecheck
+        run: uv run mypy saurix
+
+      - name: Test with coverage
+        run: uv run pytest --cov=saurix --cov-report=term-missing --cov-report=xml -q
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml

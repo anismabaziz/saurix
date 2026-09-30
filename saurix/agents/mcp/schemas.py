@@ -31,11 +31,13 @@ class ToolResult:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Serialize dataclass and drop optional empty fields.
+        Serialize dataclass, keeping either the data or the error, never both.
         """
         payload = asdict(self)
         if self.error is None:
             payload.pop("error", None)
         if self.meta is None:
             payload.pop("meta", None)
+        if self.data is None:
+            payload.pop("data", None)
         return payload

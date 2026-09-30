@@ -13,7 +13,7 @@ import ast
 from pathlib import Path
 
 from ..core.graph import GraphStore
-from ..core.models import Edge, Node
+from ..core.models import Edge, Symbol
 from .base import Extractor
 from .python_builder import add_class, add_function
 from .python_utils import name_of, resolve_name
@@ -32,7 +32,7 @@ class PythonExtractor(Extractor):
 
     def extract(self, *, repo_root: Path, file_path: Path, graph: GraphStore) -> None:
         """
-        Parses a single Python file and emits nodes/edges into the global GraphStore.
+        Parses a single Python file and emits Symbols/Edges into the global GraphStore.
 
         Args:
             repo_root: The absolute path to the repository root.
@@ -46,10 +46,10 @@ class PythonExtractor(Extractor):
         try:
             tree = ast.parse(source)
         except SyntaxError as exc:
-            # On syntax error, record a 'file' node with error metadata but
+            # On syntax error, record a 'file' Symbol with error metadata but
             # skip symbol extraction
-            graph.add_node(
-                Node(
+            graph.add_symbol(
+                Symbol(
                     id=f"python://{rel}",
                     type="file",
                     language=self.language,
@@ -63,8 +63,8 @@ class PythonExtractor(Extractor):
         # Map file to a Python module identifier
         module_name = rel[:-3].replace("/", ".") if rel.endswith(".py") else rel
         module_id = f"python://{module_name}"
-        graph.add_node(
-            Node(
+        graph.add_symbol(
+            Symbol(
                 id=module_id,
                 type="module",
                 language=self.language,
@@ -139,8 +139,8 @@ class PythonExtractor(Extractor):
                     alias_name = alias.asname or alias.name.split(".")[0]
                     imports[alias_name] = target
                     target_id = f"python://{target}"
-                    graph.add_node(
-                        Node(
+                    graph.add_symbol(
+                        Symbol(
                             id=target_id,
                             type="module",
                             language=self.language,
@@ -168,8 +168,8 @@ class PythonExtractor(Extractor):
                     resolved = f"{module}.{imported_name}" if module else imported_name
                     imports[alias_name] = resolved
                     target_id = f"python://{resolved}"
-                    graph.add_node(
-                        Node(
+                    graph.add_symbol(
+                        Symbol(
                             id=target_id,
                             type="symbol",
                             language=self.language,
@@ -229,8 +229,10 @@ class PythonExtractor(Extractor):
                 class_name=class_node.name,
                 class_methods=class_methods,
             )
-            graph.add_node(
-                Node(id=resolved, type="class", language=self.language, name=base_name)
+            graph.add_symbol(
+                Symbol(
+                    id=resolved, type="class", language=self.language, name=base_name
+                )
             )
             graph.add_edge(
                 Edge(
