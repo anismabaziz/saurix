@@ -13,6 +13,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..analysis.base import Extractor
+from .cache import (
+    DEFAULT_CACHE_PATH,
+    deserialize_contribution,
+    file_hash,
+    load_cache,
+    save_cache,
+    serialize_contribution,
+)
 from .config import config
 from .graph import GraphStore
 from .models import Symbol
@@ -46,11 +54,18 @@ class IndexResult:
     """
 
     def __init__(
-        self, graph: GraphStore, scanned_files: int, indexed_files: int
+        self,
+        graph: GraphStore,
+        scanned_files: int,
+        indexed_files: int,
+        reused_files: int = 0,
+        reextracted_files: int = 0,
     ) -> None:
         self.graph = graph
         self.scanned_files = scanned_files
         self.indexed_files = indexed_files
+        self.reused_files = reused_files
+        self.reextracted_files = reextracted_files
 
 
 class RepositoryIndexer:
@@ -121,10 +136,14 @@ class RepositoryIndexer:
         """
         Executes the indexing pipeline.
 
-        Straight scan, dispatch each file to its Extractor, merge into the
-        Graph, and write. No cache file is read or written.
+        Scan, replay cached contributions for unchanged files, extract the
+        rest, and persist the updated cache. Files missing from the scan but
+        present in the cache were deleted, so they contribute nothing and
+        leave no symbols behind.
         """
         files = self._scan_files()
+        cache_path = self.root / DEFAULT_CACHE_PATH
+        cached_files = load_cache(cache_path, self.root)
 
         # Initialize the graph with a root repository Symbol
         self.graph.add_symbol(
@@ -138,8 +157,11 @@ class RepositoryIndexer:
         )
 
         indexed = 0
+        reused = 0
+        reextracted = 0
         files_by_language: dict[str, int] = {}
         indexed_by_language: dict[str, int] = {}
+        next_cache_files: dict[str, dict[str, object]] = {}
 
         total_files = len(files)
         for i, file_path in enumerate(files):
@@ -149,6 +171,13 @@ class RepositoryIndexer:
 
             rel = file_path.relative_to(self.root).as_posix()
             files_by_language[lang] = files_by_language.get(lang, 0) + 1
+
+            if self._reuse_cached(rel, lang, file_path, cached_files, next_cache_files):
+                reused += 1
+                indexed += self._record_indexed(lang, indexed_by_language)
+                if self.on_progress:
+                    self.on_progress(i + 1, total_files, rel)
+                continue
 
             extractor = self._extractor_for(lang)
 
@@ -163,13 +192,22 @@ class RepositoryIndexer:
                 for edge in temp_graph.edges:
                     self.graph.add_edge(edge)
 
-                indexed += 1
-                indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
+                next_cache_files[rel] = serialize_contribution(
+                    list(temp_graph.symbols.values()),
+                    list(temp_graph.edges),
+                    lang=lang,
+                    content_hash=file_hash(file_path),
+                    mtime_ns=file_path.stat().st_mtime_ns,
+                )
+                reextracted += 1
+                indexed += self._record_indexed(lang, indexed_by_language)
             except Exception as e:
                 logger.error(f"Failed to extract {rel}: {e}")
 
             if self.on_progress:
                 self.on_progress(i + 1, total_files, rel)
+
+        save_cache(cache_path, next_cache_files, self.root)
 
         # Record metrics for the stats panel
         coverage: dict[str, dict[str, object]] = {}
@@ -185,8 +223,63 @@ class RepositoryIndexer:
         self.graph.set_metadata("extraction_coverage", coverage)
 
         return IndexResult(
-            graph=self.graph, scanned_files=len(files), indexed_files=indexed
+            graph=self.graph,
+            scanned_files=len(files),
+            indexed_files=indexed,
+            reused_files=reused,
+            reextracted_files=reextracted,
         )
+
+    def _reuse_cached(
+        self,
+        rel: str,
+        lang: str,
+        file_path: Path,
+        cached_files: dict[str, dict[str, object]],
+        next_cache_files: dict[str, dict[str, object]],
+    ) -> bool:
+        """
+        Merge a file's cached contribution when it is provably unchanged.
+
+        A matching modification time is the fast path; the content hash
+        confirms it, since timestamps alone can lie at coarse resolutions.
+        Returns True when the cache entry was reused.
+        """
+        cached = cached_files.get(rel)
+        if not isinstance(cached, dict):
+            return False
+        if cached.get("lang") != lang:
+            return False
+        try:
+            mtime_ns = file_path.stat().st_mtime_ns
+        except OSError:
+            return False
+        if cached.get("mtime_ns") != mtime_ns:
+            return False
+        try:
+            unchanged = cached.get("hash") == file_hash(file_path)
+        except OSError:
+            return False
+        if not unchanged:
+            return False
+        try:
+            symbols, edges = deserialize_contribution(cached)
+        except TypeError:
+            return False
+        for symbol in symbols:
+            self.graph.add_symbol(symbol)
+        for edge in edges:
+            self.graph.add_edge(edge)
+        next_cache_files[rel] = cached
+        return True
+
+    @staticmethod
+    def _record_indexed(lang: str, indexed_by_language: dict[str, int]) -> int:
+        """
+        Count one more indexed file for its language, returning the increment.
+        """
+        indexed_by_language[lang] = indexed_by_language.get(lang, 0) + 1
+        return 1
 
 
 def build_graph(

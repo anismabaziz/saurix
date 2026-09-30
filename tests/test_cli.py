@@ -47,6 +47,51 @@ class TestExportRemoved:
         assert "neo4j" not in help_text
 
 
+class TestIncrementalReporting:
+    """
+    The index command tells the user how much work the cache saved.
+    """
+
+    def _index(self, repo: Path, out: Path) -> list[object]:
+        """
+        Run the index command once and return everything it printed.
+        """
+        sink: list[object] = []
+        ui = UI(sink=sink.append)
+        state = create_state(Path("nonexistent.graph.json"), ui)
+        dispatch_command(state, f"index {repo} --out {out}")
+        return sink
+
+    def test_second_run_reports_reused_files(self, tmp_path: Path) -> None:
+        """
+        Re-indexing an unchanged checkout reports reused file counts.
+        """
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "a.py").write_text("def f():\n    return 1\n")
+        out = tmp_path / "graph.json"
+        self._index(repo, out)
+
+        sink = self._index(repo, out)
+        text = " ".join(_render(item) for item in sink).lower()
+
+        assert "reused" in text
+        assert "re-extracted" in text
+
+    def test_first_run_reports_no_reuse(self, tmp_path: Path) -> None:
+        """
+        A first run reports that nothing was reused.
+        """
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "a.py").write_text("def f():\n    return 1\n")
+
+        sink = self._index(repo, tmp_path / "graph.json")
+        text = " ".join(_render(item) for item in sink).lower()
+
+        assert "reused 0" in text
+
+
 class TestUnreadableGraph:
     """
     A graph file the loader refuses is reported, not raised.

@@ -80,50 +80,6 @@ class TestGraphStoreBasics:
         assert len(empty_graph.edges) == 1
         assert empty_graph.edges[0].type == "CALLS"
 
-    def test_snapshot_and_contribution(self, empty_graph: GraphStore) -> None:
-        """
-        Test snapshot and contribution tracking.
-        """
-        # Take initial snapshot
-        snapshot = empty_graph.snapshot_counts()
-        assert snapshot == (0, 0)
-
-        # Add symbols and edges
-        symbol1 = Symbol(
-            id="python://a",
-            type="module",
-            language="python",
-            name="a",
-            file="a.py",
-            line=1,
-        )
-        symbol2 = Symbol(
-            id="python://b",
-            type="function",
-            language="python",
-            name="b",
-            file="a.py",
-            line=5,
-        )
-        empty_graph.add_symbol(symbol1)
-        empty_graph.add_symbol(symbol2)
-        empty_graph.add_edge(
-            Edge(
-                type="CONTAINS",
-                source="python://a",
-                target="python://b",
-                language="python",
-                confidence="high",
-                file="a.py",
-                line=5,
-            )
-        )
-
-        # Get contribution since snapshot
-        symbols, edges = empty_graph.contribution_since(snapshot)
-        assert len(symbols) == 2
-        assert len(edges) == 1
-
 
 class TestGraphStoreStats:
     """

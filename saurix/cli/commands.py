@@ -85,12 +85,18 @@ def cmd_index(state: ShellState, rest: list[str]) -> None:
         return
 
     state.ui.success("Index completed")
+    state.ui.info(
+        f"Reused {result.reused_files} of {result.scanned_files} files "
+        f"({result.reextracted_files} re-extracted)"
+    )
     summary: dict[str, object] = {
         "source": source,
         "resolved": str(repo_path),
         "output": str(state.graph_path),
         "scanned_files": result.scanned_files,
         "indexed_files": result.indexed_files,
+        "reused_files": result.reused_files,
+        "reextracted_files": result.reextracted_files,
         "symbols": stats.get("symbols", 0) if isinstance(stats, dict) else 0,
         "edges": stats.get("edges", 0) if isinstance(stats, dict) else 0,
     }

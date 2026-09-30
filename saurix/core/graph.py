@@ -122,23 +122,6 @@ class GraphStore:
             self._edges_by_type[edge.type] = []
         self._edges_by_type[edge.type].append(edge)
 
-    def snapshot_counts(self) -> tuple[int, int]:
-        """
-        Returns a snapshot of current symbol/edge counts (used for delta tracking).
-        """
-        return len(self._symbols), len(self._edges)
-
-    def contribution_since(
-        self, start: tuple[int, int]
-    ) -> tuple[list[Symbol], list[Edge]]:
-        """
-        Returns the symbols and edges added to the store since the given snapshot.
-        """
-        start_symbols, start_edges = start
-        symbols = list(self._symbols.values())[start_symbols:]
-        edges = self._edges[start_edges:]
-        return symbols, edges
-
     def set_metadata(self, key: str, value: object) -> None:
         """
         Stores a piece of global metadata in the graph.

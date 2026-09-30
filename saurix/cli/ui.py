@@ -229,6 +229,8 @@ def render_index_summary(summary: dict[str, object], ui: UI) -> None:
         "excluded_dirs",
         "scanned_files",
         "indexed_files",
+        "reused_files",
+        "reextracted_files",
         "symbols",
         "edges",
     ]:
